@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "Preventista AJE",
+    "slug": "preventista-aje",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0f1117"
+    },
+    "android": {
+      "package": "com.aje.preventista",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "RECORD_AUDIO"
+      ]
+    },
+    "ios": {
+      "bundleIdentifier": "com.aje.preventista",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Necesitamos tu ubicación para registrar la dirección de tu tienda.",
+        "NSSpeechRecognitionUsageDescription": "Necesitamos acceso al micrófono para pedidos por voz.",
+        "NSMicrophoneUsageDescription": "Necesitamos acceso al micrófono para pedidos por voz."
+      }
+    },
+    "plugins": [
+      "@react-native-community/datetimepicker"
+    ]
+  }
+}
