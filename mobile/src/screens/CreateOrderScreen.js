@@ -1,72 +1,118 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
-import { getStores, createDraft } from '../services/api';
-import DateTimePicker from '@react-native-community/datetimepicker';
-
-const C = { bg: '#0f1117', card: '#1a1d29', accent: '#6366f1', text: '#f0f2f5', muted: '#8b92a5', border: '#2a2f45', success: '#22c55e' };
+import { getStores, createDraft, sendMessage } from '../services/api';
+import { colors as C } from '../theme';
 
 export default function CreateOrderScreen({ route, navigation }) {
-  const { cart } = route.params;
+  const { cart, sendToChat = false, orderId = null } = route.params;
   const [stores, setStores] = useState([]);
   const [selectedStore, setSelectedStore] = useState(null);
-  const [deliveryDate, setDeliveryDate] = useState(new Date(Date.now() + 86400000));
+  const [deliveryDate] = useState(new Date(Date.now() + 86400000));
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => { getStores().then(s => { setStores(s); if (s.length) setSelectedStore(s[0].id); }); }, []);
+  useEffect(() => {
+    getStores().then((items) => {
+      setStores(items);
+      if (items.length) setSelectedStore(items[0].id);
+    });
+  }, []);
 
-  const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+
+  const buildChatRequest = (store) => {
+    const lines = cart.map((item) => `- ${item.qty} x ${item.name}: Bs ${(item.price * item.qty).toFixed(2)}`);
+    return [
+      'Pedido estructurado desde catalogo:',
+      `Sucursal: ${store?.name || 'Sin sucursal'}`,
+      `Entrega: ${deliveryDate.toLocaleDateString('es-BO')}`,
+      'Productos:',
+      ...lines,
+      `Total estimado: Bs ${total.toFixed(2)}`,
+    ].join('\n');
+  };
 
   const handleCreate = async () => {
-    if (!selectedStore) { Alert.alert('Error', 'Selecciona una tienda'); return; }
+    if (!selectedStore) {
+      Alert.alert('Error', 'Selecciona una sucursal');
+      return;
+    }
     setLoading(true);
     try {
       const order = await createDraft({
         store_id: selectedStore,
         delivery_date: deliveryDate.toISOString().split('T')[0],
-        items: cart.map(i => ({ product_id: i.id, quantity: i.qty })),
+        items: cart.map((item) => ({ product_id: item.id, quantity: item.qty })),
       });
-      navigation.navigate('OrderConfirm', { order });
-    } catch (e) { Alert.alert('Error', e.message); }
-    finally { setLoading(false); }
+
+      if (sendToChat) {
+        const store = stores.find((item) => item.id === selectedStore);
+        await sendMessage({
+          order_id: orderId,
+          message: buildChatRequest(store),
+          sender: 'user',
+        });
+        await sendMessage({
+          order_id: orderId,
+          message: `Pedido estructurado entendido. Cree el borrador #${order.id.slice(0, 8)} con esos datos. Confirma para enviarlo a AJE.`,
+          sender: 'system',
+        });
+      }
+
+      navigation.navigate('OrderConfirm', {
+        order,
+        returnToChat: sendToChat,
+        sourceChatOrderId: orderId,
+      });
+    } catch (e) {
+      Alert.alert('Error', e.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 20 }}>
       <View style={s.card}>
-        <Text style={s.title}>Resumen del pedido</Text>
-        {cart.map(i => (
-          <View key={i.id} style={s.row}>
-            <Text style={{ color: C.text, flex: 1 }}>{i.name}</Text>
-            <Text style={{ color: C.muted }}>x{i.qty}</Text>
-            <Text style={{ color: C.text, fontWeight: '700', width: 80, textAlign: 'right' }}>Bs {(i.price * i.qty).toFixed(2)}</Text>
+        <Text style={s.title}>{sendToChat ? 'Crear pedido desde chat' : 'Resumen del pedido'}</Text>
+        {cart.map((item) => (
+          <View key={item.id} style={s.row}>
+            <Text style={{ color: C.text, flex: 1 }}>{item.name}</Text>
+            <Text style={{ color: C.muted }}>x{item.qty}</Text>
+            <Text style={{ color: C.text, fontWeight: '700', width: 80, textAlign: 'right' }}>Bs {(item.price * item.qty).toFixed(2)}</Text>
           </View>
         ))}
-        <View style={[s.row, { borderTopWidth: 1, borderTopColor: C.border, marginTop: 8, paddingTop: 12 }]}>
+        <View style={s.totalRow}>
           <Text style={{ color: C.text, fontWeight: '800', fontSize: 16 }}>TOTAL</Text>
           <Text style={{ color: C.accent, fontWeight: '800', fontSize: 18 }}>Bs {total.toFixed(2)}</Text>
         </View>
       </View>
 
       <View style={[s.card, { marginTop: 16 }]}>
-        <Text style={s.label}>Tienda</Text>
-        {stores.map(st => (
-          <TouchableOpacity key={st.id} style={[s.storeBtn, selectedStore === st.id && s.storeBtnActive]} onPress={() => setSelectedStore(st.id)}>
-            <Text style={{ color: selectedStore === st.id ? '#fff' : C.text }}>{st.name}</Text>
-            <Text style={{ color: selectedStore === st.id ? 'rgba(255,255,255,0.7)' : C.muted, fontSize: 12 }}>{st.address}</Text>
+        <Text style={s.label}>Sucursal</Text>
+        {stores.map((store) => (
+          <TouchableOpacity
+            key={store.id}
+            style={[s.storeBtn, selectedStore === store.id && s.storeBtnActive]}
+            onPress={() => setSelectedStore(store.id)}
+          >
+            <Text style={{ color: selectedStore === store.id ? C.white : C.text }}>{store.name}</Text>
+            <Text style={{ color: selectedStore === store.id ? C.whiteSoft : C.muted, fontSize: 12 }}>{store.address}</Text>
           </TouchableOpacity>
         ))}
-        {stores.length === 0 && (
+        {stores.length === 0 ? (
           <TouchableOpacity onPress={() => navigation.navigate('CreateStore')}>
-            <Text style={{ color: C.accent, marginTop: 8 }}>+ Registrar una tienda primero</Text>
+            <Text style={{ color: C.accent, marginTop: 8 }}>+ Registrar una sucursal primero</Text>
           </TouchableOpacity>
-        )}
+        ) : null}
 
         <Text style={[s.label, { marginTop: 16 }]}>Fecha de entrega</Text>
         <Text style={{ color: C.text, fontSize: 16, marginTop: 4 }}>{deliveryDate.toLocaleDateString('es-BO')}</Text>
       </View>
 
       <TouchableOpacity style={[s.btn, loading && { opacity: 0.6 }]} onPress={handleCreate} disabled={loading}>
-        <Text style={s.btnText}>{loading ? 'Creando...' : 'Crear Pedido Borrador'}</Text>
+        <Text style={s.btnText}>
+          {loading ? 'Creando...' : sendToChat ? 'Crear Pedido y Confirmar' : 'Crear Pedido Borrador'}
+        </Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -75,10 +121,11 @@ export default function CreateOrderScreen({ route, navigation }) {
 const s = StyleSheet.create({
   card: { backgroundColor: C.card, borderRadius: 14, padding: 20, borderWidth: 1, borderColor: C.border },
   title: { fontSize: 18, fontWeight: '700', color: C.text, marginBottom: 16 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, gap: 8 },
+  totalRow: { borderTopWidth: 1, borderTopColor: C.border, marginTop: 8, paddingTop: 12, flexDirection: 'row', justifyContent: 'space-between' },
   label: { fontSize: 13, fontWeight: '600', color: C.muted, marginBottom: 8 },
-  storeBtn: { backgroundColor: '#181b27', borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: C.border },
+  storeBtn: { backgroundColor: C.input, borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: C.border },
   storeBtnActive: { backgroundColor: C.accent, borderColor: C.accent },
   btn: { backgroundColor: C.accent, borderRadius: 12, padding: 16, marginTop: 24, marginBottom: 40 },
-  btnText: { color: '#fff', textAlign: 'center', fontWeight: '700', fontSize: 16 },
+  btnText: { color: C.white, textAlign: 'center', fontWeight: '700', fontSize: 16 },
 });

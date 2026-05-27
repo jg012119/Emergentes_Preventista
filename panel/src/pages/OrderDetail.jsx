@@ -1,7 +1,25 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, CheckCircle, XCircle, Loader, Truck } from 'lucide-react'
-import { getOrder, updateOrderStatus } from '../services/api'
+import { ArrowLeft, CheckCircle, XCircle, Loader, Truck, Save } from 'lucide-react'
+import { getOrder, updateOrderStatus, updateOrderDeliveryDate } from '../services/api'
+
+function formatInputDate(date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function getDeliveryDateLimits() {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const maxDate = new Date(today)
+  maxDate.setDate(today.getDate() + 7)
+  return {
+    min: formatInputDate(today),
+    max: formatInputDate(maxDate),
+  }
+}
 
 export default function OrderDetail() {
   const { id } = useParams()
@@ -9,10 +27,15 @@ export default function OrderDetail() {
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState('')
+  const [deliveryDate, setDeliveryDate] = useState('')
+  const [updatingDate, setUpdatingDate] = useState(false)
 
   useEffect(() => {
     getOrder(id)
-      .then(setOrder)
+      .then((data) => {
+        setOrder(data)
+        setDeliveryDate(data.delivery_date || '')
+      })
       .catch(() => navigate('/orders'))
       .finally(() => setLoading(false))
   }, [id])
@@ -29,6 +52,24 @@ export default function OrderDetail() {
     }
   }
 
+  const changeDeliveryDate = async () => {
+    if (!deliveryDate) {
+      alert('Selecciona una fecha de entrega')
+      return
+    }
+
+    setUpdatingDate(true)
+    try {
+      const updated = await updateOrderDeliveryDate(id, deliveryDate)
+      setOrder(updated)
+      setDeliveryDate(updated.delivery_date || '')
+    } catch (err) {
+      alert(err.message)
+    } finally {
+      setUpdatingDate(false)
+    }
+  }
+
   if (loading || !order) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
@@ -36,6 +77,9 @@ export default function OrderDetail() {
       </div>
     )
   }
+
+  const dateLimits = getDeliveryDateLimits()
+  const dateChanged = Boolean(deliveryDate && deliveryDate !== order.delivery_date)
 
   return (
     <>
@@ -144,7 +188,23 @@ export default function OrderDetail() {
               </div>
               <div className="detail-row">
                 <span>Fecha entrega</span>
-                <span>{order.delivery_date || '—'}</span>
+                <div className="delivery-date-editor">
+                  <input
+                    type="date"
+                    value={deliveryDate}
+                    min={dateLimits.min}
+                    max={dateLimits.max}
+                    onChange={(event) => setDeliveryDate(event.target.value)}
+                  />
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={changeDeliveryDate}
+                    disabled={updatingDate || !dateChanged}
+                  >
+                    <Save size={14} />
+                    {updatingDate ? 'Guardando...' : 'Guardar'}
+                  </button>
+                </div>
               </div>
               <div className="detail-row">
                 <span>Creado</span>

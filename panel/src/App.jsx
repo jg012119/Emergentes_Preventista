@@ -6,6 +6,9 @@ import Dashboard from './pages/Dashboard'
 import Orders from './pages/Orders'
 import OrderDetail from './pages/OrderDetail'
 import Products from './pages/Products'
+import Clients from './pages/Clients'
+import Reports from './pages/Reports'
+import Profile from './pages/Profile'
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem('token'))
@@ -30,7 +33,10 @@ export default function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/orders" element={<Orders />} />
         <Route path="/orders/:id" element={<OrderDetail />} />
+        <Route path="/clients" element={<Clients />} />
         <Route path="/products" element={<Products />} />
+        <Route path="/reports" element={<Reports />} />
+        <Route path="/profile" element={<Profile />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

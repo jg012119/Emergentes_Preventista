@@ -6,10 +6,11 @@
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "splash": {
-      "backgroundColor": "#0f1117"
+      "backgroundColor": "#0b141a"
     },
     "android": {
       "package": "com.aje.preventista",
+      "softwareKeyboardLayoutMode": "resize",
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "RECORD_AUDIO"
@@ -18,13 +19,24 @@
     "ios": {
       "bundleIdentifier": "com.aje.preventista",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Necesitamos tu ubicación para registrar la dirección de tu tienda.",
-        "NSSpeechRecognitionUsageDescription": "Necesitamos acceso al micrófono para pedidos por voz.",
-        "NSMicrophoneUsageDescription": "Necesitamos acceso al micrófono para pedidos por voz."
+        "NSLocationWhenInUseUsageDescription": "Necesitamos tu ubicacion para registrar la direccion de tu sucursal.",
+        "NSSpeechRecognitionUsageDescription": "Necesitamos reconocimiento de voz para interpretar pedidos hablados.",
+        "NSMicrophoneUsageDescription": "Necesitamos acceso al microfono para pedidos por voz."
       }
     },
     "plugins": [
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Necesitamos acceso al microfono para tomar pedidos por voz.",
+          "speechRecognitionPermission": "Necesitamos reconocimiento de voz para interpretar pedidos hablados.",
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox"
+          ]
+        }
+      ],
+      "expo-font"
     ]
   }
 }

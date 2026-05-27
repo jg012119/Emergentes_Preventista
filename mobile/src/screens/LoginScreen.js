@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { login } from '../services/api';
 import { Ionicons } from '@expo/vector-icons';
-
-const C = { bg: '#0f1117', card: '#1a1d29', accent: '#6366f1', accentLight: '#818cf8', text: '#f0f2f5', muted: '#8b92a5', border: '#2a2f45', danger: '#ef4444', input: '#181b27' };
+import { colors as C } from '../theme';
 
 export default function LoginScreen({ navigation, onLogin }) {
   const [email, setEmail] = useState('');
@@ -54,6 +53,6 @@ const s = StyleSheet.create({
   input: { backgroundColor: C.input, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 12, color: C.text, fontSize: 15 },
   btn: { backgroundColor: C.accent, borderRadius: 10, padding: 14, marginTop: 24 },
   btnDisabled: { opacity: 0.6 },
-  btnText: { color: '#fff', textAlign: 'center', fontWeight: '700', fontSize: 16 },
+  btnText: { color: C.white, textAlign: 'center', fontWeight: '700', fontSize: 16 },
   error: { color: C.danger, textAlign: 'center', fontSize: 13, marginBottom: 8 },
 });

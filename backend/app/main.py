@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routes import auth, users, stores, products, orders, chat, notifications
+from app.routes import auth, users, stores, products, orders, chat, notifications, reports, nlp
 
 app = FastAPI(
     title="Preventista Inteligente AJE",
@@ -28,6 +28,8 @@ app.include_router(products.router)
 app.include_router(orders.router)
 app.include_router(chat.router)
 app.include_router(notifications.router)
+app.include_router(reports.router)
+app.include_router(nlp.router)
 
 
 @app.get("/", tags=["health"])

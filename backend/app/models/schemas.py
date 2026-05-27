@@ -143,6 +143,10 @@ class OrderStatusUpdate(BaseModel):
     status: str  # pendiente, confirmado, rechazado, en_proceso
 
 
+class OrderDeliveryDateUpdate(BaseModel):
+    delivery_date: date
+
+
 # ──────────────────────────── Chat ────────────────────────────
 
 class ChatMessageCreate(BaseModel):
@@ -176,7 +180,7 @@ class NotificationOut(BaseModel):
 
 class NLPParseRequest(BaseModel):
     text: str
-    store_id: str
+    store_id: Optional[str] = None
 
 
 class NLPProductMatch(BaseModel):

@@ -1,4 +1,4 @@
-const API_URL = 'http://192.168.125.130:8000'; // Local Wi-Fi IP address
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.244.163.130:8000';
 
 let _token = null;
 
@@ -27,6 +27,9 @@ export const login = (email, password) =>
 
 export const getMe = () => request('/users/me');
 
+export const updateMe = (data) =>
+  request('/users/me', { method: 'PUT', body: JSON.stringify(data) });
+
 // Stores
 export const createStore = (data) =>
   request('/stores/', { method: 'POST', body: JSON.stringify(data) });
@@ -50,7 +53,7 @@ export const confirmOrder = (id) =>
   request(`/orders/${id}/confirm`, { method: 'POST' });
 
 export const getOrders = (status) =>
-  request(`/orders${status ? `?status_filter=${status}` : ''}`);
+  request(`/orders/${status ? `?status_filter=${status}` : ''}`);
 
 export const getOrder = (id) => request(`/orders/${id}`);
 
@@ -61,6 +64,10 @@ export const sendMessage = (data) =>
 export const getGeneralChat = () => request('/chat/general/messages');
 
 export const getChat = (orderId) => request(`/chat/${orderId}`);
+
+// NLP / Voice
+export const parseOrderText = (text, store_id = null) =>
+  request('/nlp/parse', { method: 'POST', body: JSON.stringify({ text, store_id }) });
 
 // Notifications
 export const getNotifications = () => request('/notifications/');

@@ -4,6 +4,7 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -11,28 +12,28 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { NativeModulesProxy } from 'expo-modules-core';
+import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getChat, getGeneralChat, sendMessage } from '../services/api';
-
-const C = {
-  bg: '#0b141a',
-  panel: '#111b21',
-  surface: '#17232b',
-  surfaceAlt: '#202c33',
-  accent: '#25d366',
-  accentDark: '#128c7e',
-  userBubble: '#005c4b',
-  text: '#eef6f7',
-  muted: '#8fa4ad',
-  border: '#2a3942',
-  danger: '#ef4444',
-};
+import { getChat, getGeneralChat, parseOrderText, sendMessage } from '../services/api';
+import { colors as C } from '../theme';
 
 const INTRO_MESSAGE = {
   id: 'intro-message',
   sender: 'empresa',
-  message: 'Hola, soy tu preventista. Puedes escribir tu pedido, consultar estados o pedir ayuda con tus sucursales.',
+  message: 'Hola, soy tu preventista. Puedes escribir o tocar el microfono para dictar un pedido.',
   created_at: new Date().toISOString(),
+};
+
+const getSpeechRecognitionModule = () => {
+  if (!NativeModulesProxy?.ExpoSpeechRecognition) {
+    return null;
+  }
+  try {
+    return require('expo-speech-recognition').ExpoSpeechRecognitionModule;
+  } catch (error) {
+    return null;
+  }
 };
 
 const formatTime = (dateStr) => {
@@ -57,19 +58,49 @@ const formatTime = (dateStr) => {
   }
 };
 
+const buildInterpretationMessage = (parsed) => {
+  if (parsed?.message) return parsed.message;
+  if (!parsed?.products?.length) {
+    return 'No pude identificar productos en el audio. Intenta decir cantidad y producto.';
+  }
+  const lines = parsed.products.map((item) => `- ${item.quantity} x ${item.name}: Bs ${Number(item.subtotal).toFixed(2)}`);
+  return `Pedido interpretado:\n${lines.join('\n')}\nTotal estimado: Bs ${Number(parsed.total || 0).toFixed(2)}`;
+};
+
+const GENERAL_SUGGESTIONS = [
+  'Menu',
+  'Lista de pedidos',
+  'Pedidos pendientes',
+  'Pedidos confirmados',
+  'Pedidos rechazados',
+  'Pedidos en proceso',
+];
+
+const ORDER_SUGGESTIONS = [
+  'Estado del pedido',
+  'Menu',
+  'Pedidos pendientes',
+];
+
 export default function ChatScreen({ route, navigation }) {
   const orderId = route?.params?.orderId ?? null;
   const isOrderChat = Boolean(orderId);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
+  const [recognizing, setRecognizing] = useState(false);
+  const [voiceHint, setVoiceHint] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const listRef = useRef(null);
+  const speechModuleRef = useRef(null);
+  const lastTranscriptRef = useRef('');
+  const autoInterpretRef = useRef(false);
+  const autoSendLockedRef = useRef(false);
   const insets = useSafeAreaInsets();
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
-  };
+  }, []);
 
   const load = useCallback(() => {
     const request = isOrderChat ? getChat(orderId) : getGeneralChat();
@@ -83,23 +114,8 @@ export default function ChatScreen({ route, navigation }) {
       });
   }, [isOrderChat, orderId]);
 
-  useEffect(() => {
-    load();
-    const interval = setInterval(load, 5000);
-    return () => clearInterval(interval);
-  }, [load]);
-
-  const openParentRoute = (screen) => {
-    const parent = navigation.getParent?.();
-    if (parent) {
-      parent.navigate(screen);
-      return;
-    }
-    navigation.navigate(screen);
-  };
-
-  const handleSend = async () => {
-    const clean = text.trim();
+  const sendTextMessage = useCallback(async (rawText, options = {}) => {
+    const clean = String(rawText || '').trim();
     if (!clean || sending) return;
 
     const optimistic = {
@@ -119,21 +135,175 @@ export default function ChatScreen({ route, navigation }) {
     try {
       const saved = await sendMessage({ order_id: orderId, message: clean, sender: 'user' });
       setMessages((prev) => prev.map((m) => (m.id === optimistic.id ? saved : m)));
+
+      if (options.interpret) {
+        try {
+          const parsed = await parseOrderText(clean);
+          const interpretation = buildInterpretationMessage(parsed);
+          const systemMessage = await sendMessage({ order_id: orderId, message: interpretation, sender: 'system' });
+          setMessages((prev) => [...prev, systemMessage]);
+        } catch (e) {
+          setErrorMessage('El mensaje se envio, pero no pude interpretar el pedido por voz.');
+        }
+      }
+
       load();
     } catch (e) {
       setMessages((prev) => prev.map((m) => (m.id === optimistic.id ? { ...m, failed: true } : m)));
       setErrorMessage('El mensaje quedo pendiente. Intenta enviarlo otra vez.');
     } finally {
       setSending(false);
+      scrollToBottom();
+    }
+  }, [load, orderId, scrollToBottom, sending]);
+
+  useEffect(() => {
+    load();
+    const interval = setInterval(load, 5000);
+    return () => clearInterval(interval);
+  }, [load]);
+
+  useFocusEffect(useCallback(() => {
+    load();
+  }, [load]));
+
+  useEffect(() => {
+    const speech = getSpeechRecognitionModule();
+    speechModuleRef.current = speech;
+    if (!speech?.addListener) return undefined;
+
+    const subscriptions = [
+      speech.addListener('start', () => {
+        setRecognizing(true);
+        setVoiceHint('Escuchando pedido...');
+      }),
+      speech.addListener('result', (event) => {
+        const transcript = event?.results?.[0]?.transcript || event?.transcript || '';
+        const clean = String(transcript).trim();
+        if (!clean) return;
+        lastTranscriptRef.current = clean;
+        setText(clean);
+        setVoiceHint(event?.isFinal ? 'Listo, interpretando...' : 'Escuchando pedido...');
+      }),
+      speech.addListener('end', () => {
+        setRecognizing(false);
+        const transcript = lastTranscriptRef.current.trim();
+        if (autoInterpretRef.current && transcript && !autoSendLockedRef.current) {
+          autoSendLockedRef.current = true;
+          setVoiceHint('Interpretando pedido...');
+          sendTextMessage(transcript, { interpret: true }).finally(() => {
+            autoInterpretRef.current = false;
+            autoSendLockedRef.current = false;
+            setVoiceHint('');
+          });
+          return;
+        }
+        autoInterpretRef.current = false;
+        setVoiceHint(transcript ? 'Texto listo para enviar.' : 'No se detecto voz.');
+      }),
+      speech.addListener('error', () => {
+        autoInterpretRef.current = false;
+        autoSendLockedRef.current = false;
+        setRecognizing(false);
+        setVoiceHint('No pude reconocer el audio. Intenta otra vez.');
+      }),
+    ];
+
+    return () => {
+      subscriptions.forEach((sub) => sub?.remove?.());
+    };
+  }, [sendTextMessage]);
+
+  const openParentRoute = (screen, params) => {
+    const parent = navigation.getParent?.();
+    if (parent) {
+      parent.navigate(screen, params);
+      return;
+    }
+    navigation.navigate(screen, params);
+  };
+
+  const openCatalogForChat = () => {
+    openParentRoute('Catalog', { sendToChat: true, orderId });
+  };
+
+  const openCatalogForNewOrder = () => {
+    openParentRoute('Catalog', { sendToChat: false, orderId: null });
+  };
+
+  const handleSend = () => {
+    sendTextMessage(text);
+  };
+
+  const handleVoice = async () => {
+    const speech = speechModuleRef.current || getSpeechRecognitionModule();
+    speechModuleRef.current = speech;
+
+    if (!speech) {
+      Alert.alert(
+        'Voz no disponible',
+        'Para usar el microfono necesitas abrir la app en una build de desarrollo con reconocimiento de voz instalado.'
+      );
+      return;
+    }
+
+    if (recognizing) {
+      autoInterpretRef.current = true;
+      setVoiceHint('Cerrando audio...');
+      try {
+        await speech.stop();
+      } catch (e) {
+        try {
+          await speech.abort();
+        } catch (_) {}
+      }
+      return;
+    }
+
+    if (sending) return;
+
+    try {
+      const available = await speech.isRecognitionAvailable?.();
+      if (available === false) {
+        Alert.alert('Voz no disponible', 'El dispositivo no tiene un servicio de reconocimiento de voz activo.');
+        return;
+      }
+
+      const permission = await speech.requestPermissionsAsync();
+      if (!permission?.granted) {
+        Alert.alert('Permiso requerido', 'Activa el permiso de microfono y reconocimiento de voz para dictar pedidos.');
+        return;
+      }
+
+      lastTranscriptRef.current = '';
+      autoInterpretRef.current = true;
+      autoSendLockedRef.current = false;
+      setText('');
+      setVoiceHint('Escuchando pedido...');
+
+      await speech.start({
+        lang: 'es-BO',
+        interimResults: true,
+        continuous: false,
+        maxAlternatives: 1,
+        addsPunctuation: true,
+        androidIntentOptions: {
+          EXTRA_LANGUAGE_MODEL: 'free_form',
+        },
+      });
+    } catch (e) {
+      autoInterpretRef.current = false;
+      autoSendLockedRef.current = false;
+      setRecognizing(false);
+      setVoiceHint('');
+      Alert.alert('No pude iniciar la voz', e?.message || 'Intenta otra vez.');
     }
   };
 
-  const handleVoice = () => {
-    Alert.alert('Microfono', 'Boton listo para el mockup. La grabacion de audio se puede conectar en el siguiente paso.');
-  };
-
   const chatMessages = messages.length ? messages : [INTRO_MESSAGE];
+  const suggestions = isOrderChat ? ORDER_SUGGESTIONS : GENERAL_SUGGESTIONS;
   const hasText = text.trim().length > 0;
+  const actionIcon = recognizing ? 'stop' : hasText ? 'send' : 'mic';
 
   return (
     <View style={s.screen}>
@@ -154,7 +324,7 @@ export default function ChatScreen({ route, navigation }) {
         </View>
 
         {!isOrderChat ? (
-          <TouchableOpacity style={s.headerIcon} onPress={() => openParentRoute('Catalog')}>
+          <TouchableOpacity style={s.headerIcon} onPress={openCatalogForNewOrder}>
             <Ionicons name="cart-outline" size={22} color={C.text} />
           </TouchableOpacity>
         ) : null}
@@ -162,12 +332,12 @@ export default function ChatScreen({ route, navigation }) {
 
       <KeyboardAvoidingView
         style={s.keyboard}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 4 : 0}
       >
         {!isOrderChat ? (
           <View style={s.shortcuts}>
-            <TouchableOpacity style={s.shortcut} onPress={() => openParentRoute('Catalog')}>
+            <TouchableOpacity style={s.shortcut} onPress={openCatalogForNewOrder}>
               <Ionicons name="add-circle-outline" size={18} color={C.accent} />
               <Text style={s.shortcutText}>Nuevo pedido</Text>
             </TouchableOpacity>
@@ -181,6 +351,26 @@ export default function ChatScreen({ route, navigation }) {
             </TouchableOpacity>
           </View>
         ) : null}
+
+        <View style={s.suggestionWrap}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={s.suggestionContent}
+          >
+            {suggestions.map((suggestion) => (
+              <TouchableOpacity
+                key={suggestion}
+                style={s.suggestionChip}
+                onPress={() => sendTextMessage(suggestion)}
+                disabled={sending}
+              >
+                <Text style={s.suggestionText}>{suggestion}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
 
         <FlatList
           ref={listRef}
@@ -205,6 +395,13 @@ export default function ChatScreen({ route, navigation }) {
           }}
         />
 
+        {voiceHint ? (
+          <View style={s.voiceBar}>
+            <Ionicons name={recognizing ? 'mic' : 'sparkles-outline'} size={15} color={recognizing ? C.accent : C.muted} />
+            <Text style={s.voiceText}>{voiceHint}</Text>
+          </View>
+        ) : null}
+
         {errorMessage ? (
           <View style={s.errorBar}>
             <Text style={s.errorText}>{errorMessage}</Text>
@@ -213,14 +410,14 @@ export default function ChatScreen({ route, navigation }) {
 
         <View style={[s.composerWrap, { paddingBottom: Math.max(insets.bottom, 10) }]}>
           <View style={s.composer}>
-            <TouchableOpacity style={s.inlineIcon} onPress={() => openParentRoute('Catalog')}>
+            <TouchableOpacity style={s.inlineIcon} onPress={openCatalogForChat}>
               <Ionicons name="add" size={22} color={C.muted} />
             </TouchableOpacity>
             <TextInput
               style={s.input}
               value={text}
               onChangeText={setText}
-              placeholder="Escribe un mensaje"
+              placeholder="Escribe o dicta un pedido"
               placeholderTextColor={C.muted}
               multiline
               maxLength={500}
@@ -229,11 +426,15 @@ export default function ChatScreen({ route, navigation }) {
             />
           </View>
           <TouchableOpacity
-            style={[s.actionButton, hasText ? s.sendButton : s.micButton, sending && s.disabledButton]}
-            onPress={hasText ? handleSend : handleVoice}
-            disabled={sending}
+            style={[
+              s.actionButton,
+              recognizing ? s.stopButton : hasText ? s.sendButton : s.micButton,
+              sending && !recognizing && s.disabledButton,
+            ]}
+            onPress={recognizing ? handleVoice : hasText ? handleSend : handleVoice}
+            disabled={sending && !recognizing}
           >
-            <Ionicons name={hasText ? 'send' : 'mic'} size={21} color="#fff" />
+            <Ionicons name={actionIcon} size={21} color={C.white} />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -294,6 +495,28 @@ const s = StyleSheet.create({
     paddingHorizontal: 8,
   },
   shortcutText: { color: C.text, fontSize: 12, fontWeight: '700' },
+  suggestionWrap: {
+    borderBottomWidth: 1,
+    borderBottomColor: C.border,
+    backgroundColor: C.bg,
+  },
+  suggestionContent: {
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    paddingBottom: 8,
+    gap: 8,
+  },
+  suggestionChip: {
+    minHeight: 34,
+    borderRadius: 17,
+    borderWidth: 1,
+    borderColor: C.border,
+    backgroundColor: C.surfaceAlt,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  suggestionText: { color: C.text, fontSize: 12, fontWeight: '700' },
   listContent: {
     paddingHorizontal: 12,
     paddingTop: 12,
@@ -313,7 +536,7 @@ const s = StyleSheet.create({
   userBubble: {
     alignSelf: 'flex-end',
     backgroundColor: C.userBubble,
-    borderColor: '#0b6b59',
+    borderColor: C.userBubbleBorder,
     borderBottomRightRadius: 4,
   },
   agentBubble: {
@@ -332,17 +555,31 @@ const s = StyleSheet.create({
     gap: 3,
   },
   metaText: { color: C.muted, fontSize: 10 },
-  userMetaText: { color: 'rgba(255,255,255,0.65)' },
+  userMetaText: { color: C.whiteMuted },
+  voiceBar: {
+    marginHorizontal: 12,
+    marginBottom: 6,
+    borderRadius: 14,
+    backgroundColor: C.surface,
+    borderWidth: 1,
+    borderColor: C.border,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  voiceText: { color: C.text, fontSize: 12, flex: 1 },
   errorBar: {
     marginHorizontal: 12,
     marginBottom: 6,
     borderRadius: 10,
-    backgroundColor: 'rgba(239,68,68,0.12)',
+    backgroundColor: C.dangerSoft,
     borderWidth: 1,
-    borderColor: 'rgba(239,68,68,0.3)',
+    borderColor: C.dangerBorder,
     padding: 8,
   },
-  errorText: { color: '#fecaca', fontSize: 12, textAlign: 'center' },
+  errorText: { color: C.dangerText, fontSize: 12, textAlign: 'center' },
   composerWrap: {
     backgroundColor: C.panel,
     borderTopWidth: 1,
@@ -389,6 +626,7 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   micButton: { backgroundColor: C.accentDark },
+  stopButton: { backgroundColor: C.danger },
   sendButton: { backgroundColor: C.accent },
   disabledButton: { opacity: 0.6 },
 });

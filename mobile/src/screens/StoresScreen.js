@@ -3,16 +3,7 @@ import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { deleteStore, getStores } from '../services/api';
-
-const C = {
-  bg: '#0b141a',
-  card: '#17232b',
-  accent: '#25d366',
-  text: '#eef6f7',
-  muted: '#8fa4ad',
-  border: '#2a3942',
-  danger: '#ef4444',
-};
+import { colors as C } from '../theme';
 
 export default function StoresScreen({ navigation }) {
   const [stores, setStores] = useState([]);
@@ -34,6 +25,15 @@ export default function StoresScreen({ navigation }) {
     navigation.navigate('CreateStore');
   };
 
+  const goEditStore = (store) => {
+    const parent = navigation.getParent?.();
+    if (parent) {
+      parent.navigate('CreateStore', { store });
+      return;
+    }
+    navigation.navigate('CreateStore', { store });
+  };
+
   const handleDelete = (id, name) => {
     Alert.alert('Eliminar sucursal', `Eliminar "${name}"?`, [
       { text: 'Cancelar', style: 'cancel' },
@@ -44,7 +44,7 @@ export default function StoresScreen({ navigation }) {
   return (
     <View style={s.container}>
       <TouchableOpacity style={s.addBtn} onPress={goCreateStore}>
-        <Ionicons name="add-circle-outline" size={20} color="#0b141a" />
+        <Ionicons name="add-circle-outline" size={20} color={C.black} />
         <Text style={s.addBtnText}>Nueva Sucursal</Text>
       </TouchableOpacity>
 
@@ -73,9 +73,14 @@ export default function StoresScreen({ navigation }) {
                 </View>
               ) : null}
             </View>
-            <TouchableOpacity onPress={() => handleDelete(item.id, item.name)} style={s.deleteBtn}>
-              <Ionicons name="trash-outline" size={20} color={C.danger} />
-            </TouchableOpacity>
+            <View style={s.actions}>
+              <TouchableOpacity onPress={() => goEditStore(item)} style={s.actionBtn}>
+                <Ionicons name="create-outline" size={20} color={C.accent} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => handleDelete(item.id, item.name)} style={s.actionBtn}>
+                <Ionicons name="trash-outline" size={20} color={C.danger} />
+              </TouchableOpacity>
+            </View>
           </View>
         )}
       />
@@ -95,7 +100,7 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
   },
-  addBtnText: { color: '#0b141a', textAlign: 'center', fontWeight: '800', fontSize: 15 },
+  addBtnText: { color: C.black, textAlign: 'center', fontWeight: '800', fontSize: 15 },
   list: { paddingBottom: 16 },
   emptyList: { flexGrow: 1, justifyContent: 'center' },
   card: {
@@ -113,7 +118,7 @@ const s = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 12,
-    backgroundColor: '#10261d',
+    backgroundColor: C.accentSoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -121,6 +126,7 @@ const s = StyleSheet.create({
   name: { fontSize: 16, fontWeight: '800', color: C.text },
   line: { flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 4 },
   detail: { flex: 1, fontSize: 13, color: C.muted },
-  deleteBtn: { padding: 8 },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  actionBtn: { padding: 8 },
   empty: { textAlign: 'center', color: C.muted, fontSize: 14 },
 });

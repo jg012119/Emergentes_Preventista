@@ -1,10 +1,12 @@
 """Order routes: draft creation, confirmation, listing and status changes."""
 
+from datetime import date, timedelta
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.config import get_supabase_admin
 from app.models.schemas import (
-    OrderDraftRequest, OrderOut, OrderItemOut, OrderStatusUpdate,
+    OrderDraftRequest, OrderOut, OrderItemOut, OrderStatusUpdate, OrderDeliveryDateUpdate,
 )
 from app.utils.auth import get_current_user_id
 from app.services.notification_service import notify_status_change
@@ -12,6 +14,16 @@ from app.services.notification_service import notify_status_change
 router = APIRouter(prefix="/orders", tags=["orders"])
 
 VALID_STATUSES = {"pendiente", "confirmado", "rechazado", "en_proceso"}
+
+
+def _validate_delivery_date(delivery_date: date) -> None:
+    today = date.today()
+    max_date = today + timedelta(days=7)
+    if delivery_date < today or delivery_date > max_date:
+        raise HTTPException(
+            status_code=400,
+            detail=f"La fecha de entrega debe estar entre {today.isoformat()} y {max_date.isoformat()}",
+        )
 
 
 def _enrich_order(order: dict, db) -> OrderOut:
@@ -232,3 +244,37 @@ async def update_order_status(
     await notify_status_change(db, old_order, body.status)
 
     return _enrich_order(updated.data[0], db)
+
+
+@router.put("/{order_id}/delivery-date", response_model=OrderOut)
+async def update_order_delivery_date(
+    order_id: str,
+    body: OrderDeliveryDateUpdate,
+    _user_id: str = Depends(get_current_user_id),
+):
+    """Update an order delivery date, limited to today through seven days out."""
+    _validate_delivery_date(body.delivery_date)
+
+    db = get_supabase_admin()
+    result = db.table("orders").select("*").eq("id", order_id).execute()
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
+
+    updated = (
+        db.table("orders")
+        .update({"delivery_date": body.delivery_date.isoformat()})
+        .eq("id", order_id)
+        .execute()
+    )
+    if not updated.data:
+        raise HTTPException(status_code=500, detail="No se pudo actualizar la fecha de entrega")
+
+    order = updated.data[0]
+    db.table("chat_messages").insert({
+        "user_id": order["user_id"],
+        "order_id": order_id,
+        "message": f"La fecha de entrega del pedido fue actualizada a {body.delivery_date.isoformat()}.",
+        "sender": "system",
+    }).execute()
+
+    return _enrich_order(order, db)
