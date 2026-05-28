@@ -4,6 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { deleteStore, getStores } from '../services/api';
 import { colors as C } from '../theme';
+import { GradientScreen } from '../components/ScreenBackground';
 
 export default function StoresScreen({ navigation }) {
   const [stores, setStores] = useState([]);
@@ -42,9 +43,9 @@ export default function StoresScreen({ navigation }) {
   };
 
   return (
-    <View style={s.container}>
+    <GradientScreen style={s.container}>
       <TouchableOpacity style={s.addBtn} onPress={goCreateStore}>
-        <Ionicons name="add-circle-outline" size={20} color={C.black} />
+        <Ionicons name="add-circle-outline" size={20} color={C.white} />
         <Text style={s.addBtnText}>Nueva Sucursal</Text>
       </TouchableOpacity>
 
@@ -84,15 +85,15 @@ export default function StoresScreen({ navigation }) {
           </View>
         )}
       />
-    </View>
+    </GradientScreen>
   );
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: C.bg, padding: 16 },
+  container: { padding: 16 },
   addBtn: {
     backgroundColor: C.accent,
-    borderRadius: 24,
+    borderRadius: 22,
     minHeight: 46,
     marginBottom: 14,
     flexDirection: 'row',
@@ -100,16 +101,16 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
   },
-  addBtnText: { color: C.black, textAlign: 'center', fontWeight: '800', fontSize: 15 },
+  addBtnText: { color: C.white, textAlign: 'center', fontWeight: '800', fontSize: 15 },
   list: { paddingBottom: 16 },
   emptyList: { flexGrow: 1, justifyContent: 'center' },
   card: {
     backgroundColor: C.card,
-    borderRadius: 12,
+    borderRadius: 24,
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: C.border,
+    borderColor: C.borderStrong,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
@@ -117,7 +118,7 @@ const s = StyleSheet.create({
   iconBox: {
     width: 42,
     height: 42,
-    borderRadius: 12,
+    borderRadius: 18,
     backgroundColor: C.accentSoft,
     alignItems: 'center',
     justifyContent: 'center',

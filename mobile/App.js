@@ -35,12 +35,13 @@ function MainTabs({ onLogout }) {
     <Tab.Navigator
       initialRouteName="Chat"
       screenOptions={({ route }) => ({
-        headerStyle: { backgroundColor: COLORS.card },
+        headerStyle: { backgroundColor: COLORS.panel },
         headerTintColor: COLORS.text,
         headerShadowVisible: false,
         tabBarStyle: {
-          backgroundColor: COLORS.card,
+          backgroundColor: COLORS.panel,
           borderTopColor: COLORS.border,
+          borderTopWidth: 1,
           paddingBottom: bottomInset,
           paddingTop: 6,
           height: 58 + bottomInset,
@@ -108,7 +109,7 @@ export default function App() {
         <StatusBar style="light" backgroundColor={COLORS.card} translucent={false} />
         <Stack.Navigator
           screenOptions={{
-            headerStyle: { backgroundColor: COLORS.card },
+            headerStyle: { backgroundColor: COLORS.panel },
             headerTintColor: COLORS.text,
             headerShadowVisible: false,
             contentStyle: { backgroundColor: COLORS.bg },

@@ -1,28 +1,30 @@
 /* ── Global Reset & Design Tokens ── */
 :root {
-  --bg-primary: #0f1117;
-  --bg-secondary: #1a1d29;
-  --bg-card: #222639;
-  --bg-hover: #2a2f45;
-  --bg-input: #181b27;
-  --text-primary: #f0f2f5;
-  --text-secondary: #8b92a5;
-  --text-muted: #5a6178;
-  --accent: #6366f1;
-  --accent-light: #818cf8;
-  --accent-bg: rgba(99,102,241,.12);
+  --bg-primary: #100b23;
+  --bg-secondary: rgba(30,22,62,.82);
+  --bg-card: rgba(55,43,100,.54);
+  --bg-hover: rgba(138,109,255,.18);
+  --bg-input: rgba(20,15,43,.72);
+  --text-primary: #f7f2ff;
+  --text-secondary: #c1b5df;
+  --text-muted: #897bb0;
+  --accent: #9b7cff;
+  --accent-light: #d9ccff;
+  --accent-bg: rgba(155,124,255,.18);
   --success: #22c55e;
   --success-bg: rgba(34,197,94,.12);
   --warning: #f59e0b;
   --warning-bg: rgba(245,158,11,.12);
   --danger: #ef4444;
   --danger-bg: rgba(239,68,68,.12);
-  --info: #3b82f6;
-  --info-bg: rgba(59,130,246,.12);
-  --border: #2a2f45;
-  --radius: 12px;
-  --radius-sm: 8px;
-  --shadow: 0 4px 24px rgba(0,0,0,.3);
+  --info: #4fd1ff;
+  --info-bg: rgba(79,209,255,.14);
+  --border: rgba(221,211,255,.16);
+  --border-strong: rgba(221,211,255,.28);
+  --radius: 24px;
+  --radius-sm: 16px;
+  --shadow: 0 18px 55px rgba(5,3,18,.38);
+  --glass-blur: blur(22px);
   --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --transition: .2s ease;
 }
@@ -31,7 +33,9 @@
 
 body {
   font-family: var(--font);
-  background: var(--bg-primary);
+  background:
+    linear-gradient(180deg, #2a1860 0%, #160f32 46%, #0c0a18 100%);
+  background-attachment: fixed;
   color: var(--text-primary);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -50,6 +54,8 @@ a:hover { text-decoration: underline; }
   width: 260px;
   background: var(--bg-secondary);
   border-right: 1px solid var(--border);
+  box-shadow: 16px 0 50px rgba(8,5,24,.24);
+  backdrop-filter: var(--glass-blur);
   display: flex;
   flex-direction: column;
   position: fixed;
@@ -90,7 +96,7 @@ a:hover { text-decoration: underline; }
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
-  border-radius: var(--radius-sm);
+  border-radius: 18px;
   color: var(--text-secondary);
   font-size: .875rem;
   font-weight: 500;
@@ -108,6 +114,7 @@ a:hover { text-decoration: underline; }
 .sidebar-link.active {
   background: var(--accent-bg);
   color: var(--accent-light);
+  border: 1px solid var(--border-strong);
 }
 
 .sidebar-link svg {
@@ -124,7 +131,7 @@ a:hover { text-decoration: underline; }
 .main-content {
   flex: 1;
   margin-left: 260px;
-  padding: 32px;
+  padding: 30px;
   min-height: 100vh;
 }
 
@@ -143,7 +150,7 @@ a:hover { text-decoration: underline; }
   gap: 8px;
   padding: 8px 12px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: 18px;
   background: var(--bg-secondary);
   color: var(--text-secondary);
   font-family: var(--font);
@@ -184,13 +191,18 @@ a:hover { text-decoration: underline; }
 /* ── Cards ── */
 .card {
   background: var(--bg-card);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius);
   padding: 20px;
-  transition: box-shadow var(--transition);
+  box-shadow: var(--shadow);
+  backdrop-filter: var(--glass-blur);
+  transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
 }
 
-.card:hover { box-shadow: var(--shadow); }
+.card:hover {
+  border-color: rgba(217,204,255,.42);
+  transform: translateY(-1px);
+}
 
 .cards-grid {
   display: grid;
@@ -208,7 +220,7 @@ a:hover { text-decoration: underline; }
 .stat-icon {
   width: 48px;
   height: 48px;
-  border-radius: var(--radius-sm);
+  border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -231,9 +243,11 @@ a:hover { text-decoration: underline; }
 /* ── Table ── */
 .table-container {
   background: var(--bg-card);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius);
   overflow: hidden;
+  box-shadow: var(--shadow);
+  backdrop-filter: var(--glass-blur);
 }
 
 .table-header {
@@ -281,7 +295,7 @@ tbody tr:hover { background: var(--bg-hover); }
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
-  border-radius: 20px;
+  border-radius: 999px;
   font-size: .75rem;
   font-weight: 600;
 }
@@ -298,7 +312,7 @@ tbody tr:hover { background: var(--bg-hover); }
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  border-radius: var(--radius-sm);
+  border-radius: 18px;
   font-size: .875rem;
   font-weight: 600;
   border: none;
@@ -308,8 +322,9 @@ tbody tr:hover { background: var(--bg-hover); }
 }
 
 .btn-primary {
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--accent), #6d5df5);
   color: #fff;
+  box-shadow: 0 12px 28px rgba(111,79,237,.24);
 }
 
 .btn-primary:hover { background: var(--accent-light); }
@@ -336,7 +351,7 @@ tbody tr:hover { background: var(--bg-hover); }
 .btn-warning:hover { opacity: .85; }
 
 .btn-ghost {
-  background: transparent;
+  background: rgba(255,255,255,.04);
   color: var(--text-secondary);
   border: 1px solid var(--border);
 }
@@ -374,7 +389,7 @@ tbody tr:hover { background: var(--bg-hover); }
   padding: 10px 14px;
   background: var(--bg-input);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: 18px;
   color: var(--text-primary);
   font-size: .875rem;
   font-family: var(--font);
@@ -399,7 +414,7 @@ tbody tr:hover { background: var(--bg-hover); }
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #0f1117 0%, #1a1d29 50%, #222639 100%);
+  background: linear-gradient(180deg, #2a1860 0%, #160f32 52%, #0c0a18 100%);
 }
 
 .login-card {
@@ -407,9 +422,10 @@ tbody tr:hover { background: var(--bg-hover); }
   max-width: 420px;
   padding: 40px;
   background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  border-radius: 28px;
   box-shadow: var(--shadow);
+  backdrop-filter: var(--glass-blur);
 }
 
 .login-card h1 {
@@ -493,7 +509,7 @@ tbody tr:hover { background: var(--bg-hover); }
   padding: 8px 10px;
   background: var(--bg-input);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: 16px;
   color: var(--text-primary);
   font-family: var(--font);
 }
@@ -507,7 +523,7 @@ tbody tr:hover { background: var(--bg-hover); }
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,.6);
+  background: rgba(10,6,27,.72);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -517,12 +533,13 @@ tbody tr:hover { background: var(--bg-hover); }
 
 .modal {
   background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  border-radius: 28px;
   padding: 28px;
   width: 100%;
   max-width: 500px;
   box-shadow: var(--shadow);
+  backdrop-filter: var(--glass-blur);
 }
 
 .modal h3 {
@@ -548,12 +565,12 @@ tbody tr:hover { background: var(--bg-hover); }
 
 .filter-tab {
   padding: 8px 16px;
-  border-radius: 20px;
+  border-radius: 999px;
   font-size: .8rem;
   font-weight: 500;
   cursor: pointer;
   border: 1px solid var(--border);
-  background: transparent;
+  background: rgba(255,255,255,.04);
   color: var(--text-secondary);
   transition: all var(--transition);
   font-family: var(--font);
@@ -565,9 +582,9 @@ tbody tr:hover { background: var(--bg-hover); }
 }
 
 .filter-tab.active {
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--accent), #6d5df5);
   color: #fff;
-  border-color: var(--accent);
+  border-color: var(--accent-light);
 }
 
 /* Reports & Clients */
@@ -607,7 +624,7 @@ tbody tr:hover { background: var(--bg-hover); }
 .value-grid div {
   background: var(--bg-input);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: 18px;
   padding: 12px;
 }
 
@@ -634,7 +651,7 @@ tbody tr:hover { background: var(--bg-hover); }
 .progress-track {
   height: 8px;
   overflow: hidden;
-  background: var(--bg-input);
+  background: rgba(255,255,255,.06);
   border-radius: 999px;
   border: 1px solid var(--border);
 }
@@ -665,9 +682,9 @@ tbody tr:hover { background: var(--bg-hover); }
   align-items: flex-end;
   justify-content: center;
   gap: 4px;
-  background: var(--bg-input);
+  background: rgba(255,255,255,.05);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: 18px;
   padding: 6px 5px;
 }
 
@@ -698,10 +715,12 @@ tbody tr:hover { background: var(--bg-hover); }
 
 .client-list {
   background: var(--bg-card);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius);
   overflow: hidden;
   align-self: start;
+  box-shadow: var(--shadow);
+  backdrop-filter: var(--glass-blur);
 }
 
 .search-box {
@@ -710,7 +729,7 @@ tbody tr:hover { background: var(--bg-hover); }
   gap: 10px;
   padding: 14px;
   border-bottom: 1px solid var(--border);
-  background: var(--bg-secondary);
+  background: rgba(20,15,43,.56);
 }
 
 .search-box svg { color: var(--text-muted); flex-shrink: 0; }
@@ -737,7 +756,7 @@ tbody tr:hover { background: var(--bg-hover); }
   gap: 12px;
   padding: 12px;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: 18px;
   background: transparent;
   color: var(--text-primary);
   text-align: left;
@@ -747,14 +766,14 @@ tbody tr:hover { background: var(--bg-hover); }
 
 .client-row:hover,
 .client-row.active { background: var(--bg-hover); }
-.client-row.active { outline: 1px solid var(--accent); }
+.client-row.active { outline: 1px solid var(--accent-light); }
 .client-row strong { display: block; font-size: .9rem; }
 .client-row small { color: var(--text-secondary); font-size: .76rem; }
 
 .client-avatar {
   width: 38px;
   height: 38px;
-  border-radius: 12px;
+  border-radius: 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -765,7 +784,7 @@ tbody tr:hover { background: var(--bg-hover); }
 
 .client-hero {
   background: var(--bg-card);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius);
   padding: 20px;
   display: flex;
@@ -773,6 +792,8 @@ tbody tr:hover { background: var(--bg-hover); }
   gap: 20px;
   align-items: flex-start;
   margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  backdrop-filter: var(--glass-blur);
 }
 
 .client-hero h3 { font-size: 1.25rem; margin-bottom: 6px; }

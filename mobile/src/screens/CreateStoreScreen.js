@@ -1,8 +1,9 @@
 import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { createStore, updateStore } from '../services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { colors as C } from '../theme';
+import { GradientScrollView } from '../components/ScreenBackground';
 
 export default function CreateStoreScreen({ route, navigation }) {
   const store = route?.params?.store ?? null;
@@ -64,7 +65,7 @@ export default function CreateStoreScreen({ route, navigation }) {
   };
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 20 }}>
+    <GradientScrollView contentContainerStyle={{ padding: 20 }}>
       <View style={s.card}>
         <View style={s.headerRow}>
           <Ionicons name={isEditing ? 'create-outline' : 'storefront-outline'} size={22} color={C.accent} />
@@ -102,18 +103,18 @@ export default function CreateStoreScreen({ route, navigation }) {
           </Text>
         </TouchableOpacity>
       </View>
-    </ScrollView>
+    </GradientScrollView>
   );
 }
 
 const s = StyleSheet.create({
-  card: { backgroundColor: C.card, borderRadius: 16, padding: 24, borderWidth: 1, borderColor: C.border },
+  card: { backgroundColor: C.card, borderRadius: 26, padding: 24, borderWidth: 1, borderColor: C.borderStrong },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
   title: { color: C.text, fontSize: 18, fontWeight: '800' },
   label: { fontSize: 13, fontWeight: '600', color: C.muted, marginBottom: 6, marginTop: 16 },
-  input: { backgroundColor: C.input, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 12, color: C.text, fontSize: 15 },
+  input: { backgroundColor: C.input, borderWidth: 1, borderColor: C.border, borderRadius: 18, padding: 12, color: C.text, fontSize: 15 },
   infoRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12, gap: 6 },
   infoText: { color: C.muted, fontSize: 12, flex: 1 },
-  btn: { backgroundColor: C.accent, borderRadius: 10, padding: 14, marginTop: 28 },
+  btn: { backgroundColor: C.accent, borderRadius: 18, padding: 14, marginTop: 28 },
   btnText: { color: C.white, textAlign: 'center', fontWeight: '700', fontSize: 16 },
 });

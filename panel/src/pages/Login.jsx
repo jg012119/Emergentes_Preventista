@@ -26,7 +26,7 @@ export default function Login({ onLogin }) {
     <div className="login-container">
       <form className="login-card" onSubmit={handleSubmit}>
         <div className="login-logo" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '16px' }}>
-          <Building2 size={32} color="#6366f1" />
+          <Building2 size={32} color="var(--accent-light)" />
           <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 'bold' }}>AJE Panel</h1>
         </div>
         <p>Ingresa con tu cuenta de empresa</p>

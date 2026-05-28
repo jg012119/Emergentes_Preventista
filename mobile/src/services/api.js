@@ -1,4 +1,4 @@
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.244.163.130:8000';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.25:8000';
 
 let _token = null;
 

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { getStores, createDraft, sendMessage } from '../services/api';
 import { colors as C } from '../theme';
+import { GradientScrollView } from '../components/ScreenBackground';
 
 export default function CreateOrderScreen({ route, navigation }) {
   const { cart, sendToChat = false, orderId = null } = route.params;
@@ -71,7 +72,7 @@ export default function CreateOrderScreen({ route, navigation }) {
   };
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 20 }}>
+    <GradientScrollView contentContainerStyle={{ padding: 20 }}>
       <View style={s.card}>
         <Text style={s.title}>{sendToChat ? 'Crear pedido desde chat' : 'Resumen del pedido'}</Text>
         {cart.map((item) => (
@@ -114,18 +115,18 @@ export default function CreateOrderScreen({ route, navigation }) {
           {loading ? 'Creando...' : sendToChat ? 'Crear Pedido y Confirmar' : 'Crear Pedido Borrador'}
         </Text>
       </TouchableOpacity>
-    </ScrollView>
+    </GradientScrollView>
   );
 }
 
 const s = StyleSheet.create({
-  card: { backgroundColor: C.card, borderRadius: 14, padding: 20, borderWidth: 1, borderColor: C.border },
+  card: { backgroundColor: C.card, borderRadius: 24, padding: 20, borderWidth: 1, borderColor: C.borderStrong },
   title: { fontSize: 18, fontWeight: '700', color: C.text, marginBottom: 16 },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, gap: 8 },
   totalRow: { borderTopWidth: 1, borderTopColor: C.border, marginTop: 8, paddingTop: 12, flexDirection: 'row', justifyContent: 'space-between' },
   label: { fontSize: 13, fontWeight: '600', color: C.muted, marginBottom: 8 },
-  storeBtn: { backgroundColor: C.input, borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: C.border },
-  storeBtnActive: { backgroundColor: C.accent, borderColor: C.accent },
-  btn: { backgroundColor: C.accent, borderRadius: 12, padding: 16, marginTop: 24, marginBottom: 40 },
+  storeBtn: { backgroundColor: C.input, borderRadius: 18, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: C.border },
+  storeBtnActive: { backgroundColor: C.accentDark, borderColor: C.accentLight },
+  btn: { backgroundColor: C.accent, borderRadius: 18, padding: 16, marginTop: 24, marginBottom: 40 },
   btnText: { color: C.white, textAlign: 'center', fontWeight: '700', fontSize: 16 },
 });

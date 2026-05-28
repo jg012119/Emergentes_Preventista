@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { getProducts } from '../services/api';
 import { colors as C } from '../theme';
+import { GradientScreen } from '../components/ScreenBackground';
 
 export default function CatalogScreen({ route, navigation }) {
   const sendToChat = Boolean(route?.params?.sendToChat);
@@ -41,7 +42,7 @@ export default function CatalogScreen({ route, navigation }) {
   };
 
   return (
-    <View style={s.c}>
+    <GradientScreen style={s.c}>
       <FlatList
         data={products}
         keyExtractor={(item) => item.id}
@@ -93,20 +94,20 @@ export default function CatalogScreen({ route, navigation }) {
           </TouchableOpacity>
         </View>
       ) : null}
-    </View>
+    </GradientScreen>
   );
 }
 
 const s = StyleSheet.create({
-  c: { flex: 1, backgroundColor: C.bg },
+  c: {},
   card: {
     backgroundColor: C.card,
     marginHorizontal: 16,
     marginTop: 10,
-    borderRadius: 12,
+    borderRadius: 24,
     padding: 16,
     borderWidth: 1,
-    borderColor: C.border,
+    borderColor: C.borderStrong,
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -114,14 +115,16 @@ const s = StyleSheet.create({
   qb: {
     width: 36,
     height: 36,
-    borderRadius: 8,
-    backgroundColor: C.border,
+    borderRadius: 14,
+    backgroundColor: C.surfaceAlt,
+    borderWidth: 1,
+    borderColor: C.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
   qt: { color: C.white, fontSize: 20, fontWeight: '700' },
   footer: {
-    backgroundColor: C.card,
+    backgroundColor: C.panel,
     borderTopWidth: 1,
     borderTopColor: C.border,
     padding: 16,
@@ -129,5 +132,5 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  go: { backgroundColor: C.accent, borderRadius: 10, paddingVertical: 12, paddingHorizontal: 24 },
+  go: { backgroundColor: C.accent, borderRadius: 18, paddingVertical: 12, paddingHorizontal: 24 },
 });
