@@ -137,6 +137,7 @@ class OrderOut(BaseModel):
     notes: Optional[str] = None
     created_at: Optional[str] = None
     items: Optional[List[OrderItemOut]] = None
+    nlp_data: Optional[dict] = None
 
 
 class OrderStatusUpdate(BaseModel):
@@ -182,18 +183,7 @@ class NLPParseRequest(BaseModel):
     text: str
     store_id: Optional[str] = None
 
-
-class NLPProductMatch(BaseModel):
-    name: str
-    product_id: Optional[str] = None
-    quantity: int
-    unit_price: float
-    subtotal: float
-
-
 class NLPParseResponse(BaseModel):
-    products: List[NLPProductMatch]
-    delivery_date: Optional[str] = None
-    total: float
-    requires_confirmation: bool = True
-    message: Optional[str] = None
+    order: dict  # OrderDraftRequest compatible dict
+    nlp_data: dict
+    questions: list[dict] | None = None

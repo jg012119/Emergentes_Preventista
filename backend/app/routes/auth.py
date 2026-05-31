@@ -2,9 +2,9 @@
 
 from fastapi import APIRouter, HTTPException, status
 
-from app.config import get_supabase_admin
-from app.models.schemas import RegisterRequest, LoginRequest, TokenResponse, UserOut
-from app.utils.auth import hash_password, verify_password, create_access_token
+from ..config import get_supabase_admin
+from ..models.schemas import RegisterRequest, LoginRequest, TokenResponse, UserOut
+from ..utils.auth import hash_password, verify_password, create_access_token
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
