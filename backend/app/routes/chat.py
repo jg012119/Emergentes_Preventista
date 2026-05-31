@@ -1,5 +1,6 @@
 """Chat message routes."""
 
+import json
 import unicodedata
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -10,12 +11,23 @@ from app.utils.auth import get_current_user_id
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
+CHAT_ACTION_PREFIX = "@@action "
+ORDER_LIST_LIMIT = 5
+
 STATUS_LABELS = {
     "borrador": "Borrador",
     "pendiente": "Pendiente",
     "confirmado": "Confirmado",
     "rechazado": "Rechazado",
     "en_proceso": "En proceso",
+}
+
+STATUS_PLURAL_LABELS = {
+    "borrador": "borradores",
+    "pendiente": "pendientes",
+    "confirmado": "confirmados",
+    "rechazado": "rechazados",
+    "en_proceso": "en proceso",
 }
 
 STATUS_ALIASES = {
@@ -32,6 +44,10 @@ STATUS_ALIASES = {
     "en proceso": "en_proceso",
     "en_proceso": "en_proceso",
 }
+
+
+def _action_line(payload: dict) -> str:
+    return f"{CHAT_ACTION_PREFIX}{json.dumps(payload, ensure_ascii=True, separators=(',', ':'))}"
 
 
 def _first_name(name: str | None) -> str:
@@ -107,27 +123,72 @@ def _order_line(db, order: dict) -> str:
     store = _store_name(db, order.get("store_id"))
     status = _status_label(order.get("status"))
     delivery = order.get("delivery_date") or "sin fecha"
-    return f"#{order['id'][:8]} - {store} - {status} - {_money(order.get('total'))} - entrega {delivery}"
+    return f"Pedido #{order['id'][:8]} - {store} - {status} - {_money(order.get('total'))} - entrega {delivery}"
+
+
+def _order_action(db, order: dict) -> dict:
+    store = _store_name(db, order.get("store_id"))
+    status = _status_label(order.get("status"))
+    delivery = order.get("delivery_date") or "sin fecha"
+    return {
+        "type": "order",
+        "order_id": order["id"],
+        "label": f"Ver pedido #{order['id'][:8]}",
+        "store": store,
+        "status": status,
+        "total": _money(order.get("total")),
+        "delivery": delivery,
+    }
+
+
+def _orders_action_label(status_filter: str | None) -> str:
+    if status_filter:
+        return f"Ver mas pedidos {STATUS_PLURAL_LABELS.get(status_filter, _status_label(status_filter).lower())}"
+    return "Ver mas pedidos"
+
+
+def _append_followup_actions(lines: list[str], status_filter: str | None = None) -> None:
+    lines.append(_action_line({
+        "type": "orders",
+        "status": status_filter,
+        "label": _orders_action_label(status_filter),
+    }))
+    lines.append(_action_line({
+        "type": "message",
+        "message": "Menu",
+        "label": "Ver menu",
+    }))
 
 
 def _list_orders_message(db, user_id: str, status_filter: str | None = None) -> str:
     query = db.table("orders").select("*").eq("user_id", user_id).order("created_at", desc=True)
     if status_filter:
         query = query.eq("status", status_filter)
-    orders = query.limit(5).execute().data
+    orders = query.limit(ORDER_LIST_LIMIT + 1).execute().data
+    visible_orders = orders[:ORDER_LIST_LIMIT]
 
-    if not orders:
+    if not visible_orders:
         if status_filter:
-            return f"No encontre pedidos en estado {_status_label(status_filter).lower()}."
-        return "Todavia no tienes pedidos registrados."
+            lines = [f"No encontre pedidos en estado {_status_label(status_filter).lower()}."]
+        else:
+            lines = ["Todavia no tienes pedidos registrados."]
+        lines.append("Puedo mostrarte el menu para armar uno nuevo.")
+        lines.append(_action_line({"type": "message", "message": "Menu", "label": "Ver menu"}))
+        return "\n".join(lines)
 
     title = (
-        f"Tus ultimos pedidos en estado {_status_label(status_filter).lower()}:"
+        f"Tus ultimos {min(len(visible_orders), ORDER_LIST_LIMIT)} pedidos en estado {_status_label(status_filter).lower()}:"
         if status_filter
-        else "Tus ultimos pedidos:"
+        else f"Tus ultimos {min(len(visible_orders), ORDER_LIST_LIMIT)} pedidos:"
     )
     lines = [title]
-    lines.extend(f"- {_order_line(db, order)}" for order in orders)
+    lines.extend(f"- {_order_line(db, order)}" for order in visible_orders)
+    lines.append("Toca un pedido para ver el detalle completo.")
+    if len(orders) > ORDER_LIST_LIMIT:
+        lines.append("Hay mas resultados disponibles con este mismo filtro.")
+    for order in visible_orders:
+        lines.append(_action_line(_order_action(db, order)))
+    _append_followup_actions(lines, status_filter)
     return "\n".join(lines)
 
 
@@ -145,13 +206,16 @@ def _order_status_message(db, user_id: str, order_id: str | None) -> str:
     order = orders[0]
     items = db.table("order_items").select("*").eq("order_id", order["id"]).execute().data
     item_count = sum(int(item.get("quantity") or 0) for item in items)
-    return (
+    lines = [
         f"El pedido #{order['id'][:8]} esta en estado {_status_label(order.get('status')).lower()}.\n"
         f"Sucursal: {_store_name(db, order.get('store_id'))}\n"
         f"Entrega: {order.get('delivery_date') or 'sin fecha'}\n"
         f"Productos: {item_count}\n"
         f"Total: {_money(order.get('total'))}"
-    )
+    ]
+    lines.append(_action_line(_order_action(db, order)))
+    lines.append(_action_line({"type": "message", "message": "Menu", "label": "Ver menu"}))
+    return "\n".join(lines)
 
 
 def _build_chat_reply(db, user_id: str, body: ChatMessageCreate) -> str | None:

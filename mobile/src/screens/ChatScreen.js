@@ -17,6 +17,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getChat, getGeneralChat, parseOrderText, sendMessage } from '../services/api';
 import { colors as C } from '../theme';
+import { GradientScreen } from '../components/ScreenBackground';
 
 const INTRO_MESSAGE = {
   id: 'intro-message',
@@ -78,9 +79,45 @@ const GENERAL_SUGGESTIONS = [
 
 const ORDER_SUGGESTIONS = [
   'Estado del pedido',
+  'Lista de pedidos',
   'Menu',
   'Pedidos pendientes',
 ];
+
+const CHAT_ACTION_PREFIX = '@@action ';
+
+const parseMessageParts = (message) => {
+  const actions = [];
+  const visibleLines = [];
+
+  String(message || '').split('\n').forEach((line) => {
+    const trimmed = line.trim();
+    if (trimmed.startsWith(CHAT_ACTION_PREFIX)) {
+      try {
+        const action = JSON.parse(trimmed.slice(CHAT_ACTION_PREFIX.length));
+        if (action?.type) actions.push(action);
+      } catch (_) {
+        visibleLines.push(line);
+      }
+      return;
+    }
+    visibleLines.push(line);
+  });
+
+  return { text: visibleLines.join('\n').trim(), actions };
+};
+
+const getChatActionIcon = (type) => {
+  if (type === 'order') return 'receipt-outline';
+  if (type === 'orders') return 'list-outline';
+  return 'chatbubble-ellipses-outline';
+};
+
+const getChatActionMeta = (action) => (
+  [action.store, action.status, action.total, action.delivery ? `Entrega ${action.delivery}` : null]
+    .filter(Boolean)
+    .join(' - ')
+);
 
 export default function ChatScreen({ route, navigation }) {
   const orderId = route?.params?.orderId ?? null;
@@ -231,6 +268,40 @@ export default function ChatScreen({ route, navigation }) {
     openParentRoute('Catalog', { sendToChat: false, orderId: null });
   };
 
+  const openOrderDetail = useCallback((targetOrderId) => {
+    if (!targetOrderId) return;
+    const routeNames = navigation.getState?.()?.routeNames || [];
+    if (routeNames.includes('OrderDetail')) {
+      navigation.navigate('OrderDetail', { orderId: targetOrderId });
+      return;
+    }
+    openParentRoute('OrderDetail', { orderId: targetOrderId });
+  }, [navigation]);
+
+  const openOrdersList = useCallback((statusFilter = null) => {
+    const params = { statusFilter: statusFilter || null };
+    const routeNames = navigation.getState?.()?.routeNames || [];
+    if (routeNames.includes('Pedidos')) {
+      navigation.navigate('Pedidos', params);
+      return;
+    }
+    navigation.navigate('Main', { screen: 'Pedidos', params });
+  }, [navigation]);
+
+  const handleChatAction = useCallback((action) => {
+    if (action.type === 'order') {
+      openOrderDetail(action.order_id);
+      return;
+    }
+    if (action.type === 'orders') {
+      openOrdersList(action.status);
+      return;
+    }
+    if (action.type === 'message') {
+      sendTextMessage(action.message || action.label);
+    }
+  }, [openOrderDetail, openOrdersList, sendTextMessage]);
+
   const handleSend = () => {
     sendTextMessage(text);
   };
@@ -306,7 +377,7 @@ export default function ChatScreen({ route, navigation }) {
   const actionIcon = recognizing ? 'stop' : hasText ? 'send' : 'mic';
 
   return (
-    <View style={s.screen}>
+    <GradientScreen style={s.screen}>
       <View style={[s.header, { paddingTop: Math.max(insets.top, 10) }]}>
         {isOrderChat && navigation.canGoBack() ? (
           <TouchableOpacity style={s.headerIcon} onPress={() => navigation.goBack()}>
@@ -314,7 +385,7 @@ export default function ChatScreen({ route, navigation }) {
           </TouchableOpacity>
         ) : (
           <View style={s.avatar}>
-            <Ionicons name="chatbubble-ellipses" size={20} color={C.panel} />
+            <Ionicons name="chatbubble-ellipses" size={20} color={C.text} />
           </View>
         )}
 
@@ -352,26 +423,6 @@ export default function ChatScreen({ route, navigation }) {
           </View>
         ) : null}
 
-        <View style={s.suggestionWrap}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={s.suggestionContent}
-          >
-            {suggestions.map((suggestion) => (
-              <TouchableOpacity
-                key={suggestion}
-                style={s.suggestionChip}
-                onPress={() => sendTextMessage(suggestion)}
-                disabled={sending}
-              >
-                <Text style={s.suggestionText}>{suggestion}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
         <FlatList
           ref={listRef}
           data={chatMessages}
@@ -381,9 +432,34 @@ export default function ChatScreen({ route, navigation }) {
           onContentSizeChange={scrollToBottom}
           renderItem={({ item }) => {
             const isUser = item.sender === 'user';
+            const parsed = parseMessageParts(item.message);
             return (
               <View style={[s.bubble, isUser ? s.userBubble : s.agentBubble, item.failed && s.failedBubble]}>
-                <Text style={s.messageText}>{item.message}</Text>
+                {parsed.text ? <Text style={s.messageText}>{parsed.text}</Text> : null}
+                {parsed.actions.length ? (
+                  <View style={[s.messageActions, !parsed.text && s.messageActionsOnly]}>
+                    {parsed.actions.map((action, index) => {
+                      const meta = getChatActionMeta(action);
+                      return (
+                        <TouchableOpacity
+                          key={`${action.type}-${action.order_id || action.status || action.message || index}`}
+                          activeOpacity={0.82}
+                          style={s.messageAction}
+                          onPress={() => handleChatAction(action)}
+                        >
+                          <View style={s.messageActionIcon}>
+                            <Ionicons name={getChatActionIcon(action.type)} size={15} color={C.accent} />
+                          </View>
+                          <View style={s.messageActionCopy}>
+                            <Text style={s.messageActionTitle}>{action.label || action.message || 'Abrir'}</Text>
+                            {meta ? <Text style={s.messageActionMeta}>{meta}</Text> : null}
+                          </View>
+                          <Ionicons name="chevron-forward" size={16} color={C.muted} />
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                ) : null}
                 <View style={s.metaRow}>
                   {item.failed ? <Ionicons name="alert-circle" size={12} color={C.danger} /> : null}
                   <Text style={[s.metaText, isUser && s.userMetaText]}>
@@ -407,6 +483,28 @@ export default function ChatScreen({ route, navigation }) {
             <Text style={s.errorText}>{errorMessage}</Text>
           </View>
         ) : null}
+
+        <View style={s.suggestionWrap}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={s.suggestionContent}
+          >
+            {suggestions.map((suggestion) => (
+              <TouchableOpacity
+                key={suggestion}
+                activeOpacity={0.82}
+                style={[s.suggestionChip, sending && s.suggestionChipDisabled]}
+                onPress={() => sendTextMessage(suggestion)}
+                disabled={sending}
+              >
+                <Text style={s.suggestionText}>{suggestion}</Text>
+                <Ionicons name="send" size={12} color={C.whiteSoft} />
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
 
         <View style={[s.composerWrap, { paddingBottom: Math.max(insets.bottom, 10) }]}>
           <View style={s.composer}>
@@ -438,12 +536,12 @@ export default function ChatScreen({ route, navigation }) {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </View>
+    </GradientScreen>
   );
 }
 
 const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: C.bg },
+  screen: {},
   header: {
     backgroundColor: C.panel,
     borderBottomWidth: 1,
@@ -458,7 +556,9 @@ const s = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: C.accent,
+    backgroundColor: C.accentSoft,
+    borderWidth: 1,
+    borderColor: C.borderStrong,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -479,7 +579,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
     paddingTop: 10,
     paddingBottom: 6,
-    backgroundColor: C.bg,
+    backgroundColor: 'transparent',
   },
   shortcut: {
     flex: 1,
@@ -487,7 +587,7 @@ const s = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: C.border,
-    backgroundColor: C.surface,
+    backgroundColor: C.surfaceAlt,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
@@ -496,27 +596,33 @@ const s = StyleSheet.create({
   },
   shortcutText: { color: C.text, fontSize: 12, fontWeight: '700' },
   suggestionWrap: {
-    borderBottomWidth: 1,
-    borderBottomColor: C.border,
-    backgroundColor: C.bg,
+    backgroundColor: 'transparent',
+    paddingBottom: 6,
   },
   suggestionContent: {
     paddingHorizontal: 12,
-    paddingTop: 8,
-    paddingBottom: 8,
-    gap: 8,
+    paddingTop: 4,
+    paddingBottom: 2,
+    gap: 7,
+    alignItems: 'flex-end',
   },
   suggestionChip: {
-    minHeight: 34,
+    minHeight: 36,
+    maxWidth: 210,
     borderRadius: 17,
+    borderBottomRightRadius: 5,
     borderWidth: 1,
-    borderColor: C.border,
-    backgroundColor: C.surfaceAlt,
-    paddingHorizontal: 12,
+    borderColor: C.borderStrong,
+    backgroundColor: 'rgba(126,87,255,0.42)',
+    paddingLeft: 13,
+    paddingRight: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 7,
   },
-  suggestionText: { color: C.text, fontSize: 12, fontWeight: '700' },
+  suggestionChipDisabled: { opacity: 0.55 },
+  suggestionText: { color: C.text, fontSize: 12, fontWeight: '700', flexShrink: 1 },
   listContent: {
     paddingHorizontal: 12,
     paddingTop: 12,
@@ -541,12 +647,40 @@ const s = StyleSheet.create({
   },
   agentBubble: {
     alignSelf: 'flex-start',
-    backgroundColor: C.surfaceAlt,
+    backgroundColor: 'rgba(42,33,82,0.64)',
     borderColor: C.border,
     borderBottomLeftRadius: 4,
   },
   failedBubble: { borderColor: C.danger },
   messageText: { color: C.text, fontSize: 15, lineHeight: 21 },
+  messageActions: {
+    marginTop: 10,
+    gap: 7,
+  },
+  messageActionsOnly: { marginTop: 0 },
+  messageAction: {
+    minWidth: 230,
+    borderRadius: 13,
+    borderWidth: 1,
+    borderColor: C.border,
+    backgroundColor: 'rgba(28,20,58,0.76)',
+    paddingHorizontal: 9,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  messageActionIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: C.accentSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  messageActionCopy: { flex: 1, minWidth: 0 },
+  messageActionTitle: { color: C.text, fontSize: 12, fontWeight: '800' },
+  messageActionMeta: { color: C.muted, fontSize: 11, marginTop: 2 },
   metaRow: {
     marginTop: 4,
     alignSelf: 'flex-end',

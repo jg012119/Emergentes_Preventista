@@ -4,7 +4,6 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -14,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { getMe, updateMe } from '../services/api';
 import { colors as C } from '../theme';
+import { GradientScreen, GradientScrollView } from '../components/ScreenBackground';
 
 export default function ProfileScreen({ onLogout }) {
   const [user, setUser] = useState(null);
@@ -77,9 +77,9 @@ export default function ProfileScreen({ onLogout }) {
 
   if (loading) {
     return (
-      <View style={s.centered}>
+      <GradientScreen style={s.centered}>
         <ActivityIndicator size="large" color={C.accent} />
-      </View>
+      </GradientScreen>
     );
   }
 
@@ -88,8 +88,7 @@ export default function ProfileScreen({ onLogout }) {
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView
-        style={s.screen}
+      <GradientScrollView
         contentContainerStyle={s.content}
         keyboardShouldPersistTaps="handled"
       >
@@ -168,26 +167,25 @@ export default function ProfileScreen({ onLogout }) {
           <Ionicons name="log-out-outline" size={18} color={C.danger} />
           <Text style={s.logoutText}>Cerrar sesión</Text>
         </TouchableOpacity>
-      </ScrollView>
+      </GradientScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: C.bg },
   content: { padding: 20, paddingBottom: 40 },
-  centered: { flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' },
+  centered: { alignItems: 'center', justifyContent: 'center' },
 
   avatarSection: { alignItems: 'center', marginBottom: 24, marginTop: 8 },
   avatarCircle: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: C.accentDark,
+    backgroundColor: C.accentSoft,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: C.accent,
+    borderColor: C.borderStrong,
     marginBottom: 10,
   },
   avatarLetter: { fontSize: 36, fontWeight: '900', color: C.white },
@@ -198,7 +196,7 @@ const s = StyleSheet.create({
     gap: 5,
     backgroundColor: C.accentSoft,
     borderWidth: 1,
-    borderColor: C.accentDark,
+    borderColor: C.borderStrong,
     borderRadius: 20,
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -207,9 +205,9 @@ const s = StyleSheet.create({
 
   card: {
     backgroundColor: C.card,
-    borderRadius: 14,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: C.border,
+    borderColor: C.borderStrong,
     padding: 16,
     marginBottom: 14,
   },
@@ -220,7 +218,7 @@ const s = StyleSheet.create({
     backgroundColor: C.input,
     borderWidth: 1,
     borderColor: C.border,
-    borderRadius: 10,
+    borderRadius: 18,
     color: C.text,
     fontSize: 15,
     paddingHorizontal: 14,
@@ -235,7 +233,7 @@ const s = StyleSheet.create({
     backgroundColor: C.dangerSoft,
     borderWidth: 1,
     borderColor: C.dangerBorder,
-    borderRadius: 10,
+    borderRadius: 18,
     padding: 10,
     marginBottom: 12,
   },
@@ -248,7 +246,7 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(34,197,94,0.1)',
     borderWidth: 1,
     borderColor: 'rgba(34,197,94,0.3)',
-    borderRadius: 10,
+    borderRadius: 18,
     padding: 10,
     marginBottom: 12,
   },
@@ -256,7 +254,7 @@ const s = StyleSheet.create({
 
   saveBtn: {
     backgroundColor: C.accent,
-    borderRadius: 12,
+    borderRadius: 18,
     paddingVertical: 14,
     flexDirection: 'row',
     alignItems: 'center',
@@ -268,7 +266,7 @@ const s = StyleSheet.create({
   saveBtnText: { color: C.white, fontSize: 15, fontWeight: '700' },
 
   logoutBtn: {
-    borderRadius: 12,
+    borderRadius: 18,
     paddingVertical: 14,
     flexDirection: 'row',
     alignItems: 'center',

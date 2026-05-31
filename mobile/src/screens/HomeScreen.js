@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors as C } from '../theme';
+import { GradientScreen } from '../components/ScreenBackground';
 
 export default function HomeScreen({ navigation }) {
   const actions = [
@@ -11,7 +12,7 @@ export default function HomeScreen({ navigation }) {
   ];
 
   return (
-    <View style={s.container}>
+    <GradientScreen style={s.container}>
       <View style={s.heroRow}>
         <Text style={s.heroTitle}>Bienvenido</Text>
         <Ionicons name="hand-left-outline" size={26} color={C.warning} />
@@ -36,18 +37,18 @@ export default function HomeScreen({ navigation }) {
           </View>
         </TouchableOpacity>
       ))}
-    </View>
+    </GradientScreen>
   );
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: C.bg, padding: 20 },
+  container: { padding: 20 },
   heroRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12 },
   heroTitle: { fontSize: 26, fontWeight: '800', color: C.text },
   subtitle: { fontSize: 15, color: C.muted, marginBottom: 28, marginTop: 4 },
-  card: { backgroundColor: C.card, borderRadius: 14, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: C.border },
+  card: { backgroundColor: C.card, borderRadius: 24, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: C.borderStrong },
   cardRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  iconContainer: { width: 44, height: 44, borderRadius: 10, backgroundColor: C.input, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: C.border },
+  iconContainer: { width: 46, height: 46, borderRadius: 18, backgroundColor: C.accentSoft, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: C.border },
   cardLabel: { fontSize: 16, fontWeight: '700', color: C.text, marginBottom: 2 },
   cardDesc: { fontSize: 13, color: C.muted },
 });
