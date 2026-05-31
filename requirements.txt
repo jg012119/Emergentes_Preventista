@@ -1,0 +1,4 @@
+spacy==3.7.*
+es_core_news_md==3.7.*
+rapidfuzz==3.9.*
+dateparser==1.2.*

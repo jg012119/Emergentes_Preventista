@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS orders (
     delivery_date TEXT,
     total         REAL NOT NULL DEFAULT 0,
     notes         TEXT DEFAULT '',
+    nlp_data      JSON,
     created_at    TEXT DEFAULT (datetime('now'))
 );
 
