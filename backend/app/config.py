@@ -19,20 +19,23 @@ EMAIL_PORT: int = int(os.getenv("EMAIL_PORT", "587"))
 EMAIL_USER: str = os.getenv("EMAIL_USER", "")
 EMAIL_PASSWORD: str = os.getenv("EMAIL_PASSWORD", "")
 
-# ---------------------------------------------------------------------------
-# Detect whether real Supabase credentials are configured
-# ---------------------------------------------------------------------------
+import re
+
 _PLACEHOLDER_MARKERS = ("your-project", "your-anon-key", "your-service-role-key")
+_JWT_PATTERN = r"^[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$"
+
 _USE_LOCAL_DB = (
     not SUPABASE_URL
     or not SUPABASE_KEY
     or any(marker in SUPABASE_URL for marker in _PLACEHOLDER_MARKERS)
     or any(marker in SUPABASE_KEY for marker in _PLACEHOLDER_MARKERS)
+    or not re.match(_JWT_PATTERN, SUPABASE_KEY)
+    or (SUPABASE_SERVICE_KEY and not re.match(_JWT_PATTERN, SUPABASE_SERVICE_KEY))
 )
 
 if _USE_LOCAL_DB:
     from app.local_db import get_local_client
-    print("[WARNING] Supabase credentials not configured - using LOCAL SQLite database")
+    print("[WARNING] Supabase credentials not configured or invalid - using LOCAL SQLite database")
 else:
     from supabase import create_client, Client
 

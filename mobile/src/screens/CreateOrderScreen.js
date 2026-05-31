@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { getStores, createDraft, sendMessage } from '../services/api';
+import { Ionicons } from '@expo/vector-icons';
 import { colors as C } from '../theme';
 
 export default function CreateOrderScreen({ route, navigation }) {
@@ -10,12 +12,23 @@ export default function CreateOrderScreen({ route, navigation }) {
   const [deliveryDate] = useState(new Date(Date.now() + 86400000));
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    getStores().then((items) => {
-      setStores(items);
-      if (items.length) setSelectedStore(items[0].id);
-    });
-  }, []);
+  // Re-fetch stores every time this screen gets focus
+  // (covers: created a new store and navigated back)
+  useFocusEffect(
+    useCallback(() => {
+      getStores().then((items) => {
+        setStores(items);
+        // Auto-select first store if nothing is selected yet or the
+        // previously-selected store was deleted
+        setSelectedStore((prev) => {
+          if (!prev || !items.find((s) => s.id === prev)) {
+            return items.length ? items[0].id : null;
+          }
+          return prev;
+        });
+      }).catch(() => {});
+    }, [])
+  );
 
   const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
 
@@ -100,10 +113,16 @@ export default function CreateOrderScreen({ route, navigation }) {
           </TouchableOpacity>
         ))}
         {stores.length === 0 ? (
-          <TouchableOpacity onPress={() => navigation.navigate('CreateStore')}>
-            <Text style={{ color: C.accent, marginTop: 8 }}>+ Registrar una sucursal primero</Text>
+          <TouchableOpacity style={s.addStoreBtn} onPress={() => navigation.navigate('CreateStore')}>
+            <Ionicons name="add-circle-outline" size={18} color={C.accent} />
+            <Text style={s.addStoreBtnText}>Registrar una sucursal primero</Text>
           </TouchableOpacity>
-        ) : null}
+        ) : (
+          <TouchableOpacity style={s.addStoreLinkRow} onPress={() => navigation.navigate('CreateStore')}>
+            <Ionicons name="add-outline" size={15} color={C.muted} />
+            <Text style={s.addStoreLinkText}>Añadir otra sucursal</Text>
+          </TouchableOpacity>
+        )}
 
         <Text style={[s.label, { marginTop: 16 }]}>Fecha de entrega</Text>
         <Text style={{ color: C.text, fontSize: 16, marginTop: 4 }}>{deliveryDate.toLocaleDateString('es-BO')}</Text>
@@ -125,7 +144,15 @@ const s = StyleSheet.create({
   totalRow: { borderTopWidth: 1, borderTopColor: C.border, marginTop: 8, paddingTop: 12, flexDirection: 'row', justifyContent: 'space-between' },
   label: { fontSize: 13, fontWeight: '600', color: C.muted, marginBottom: 8 },
   storeBtn: { backgroundColor: C.input, borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: C.border },
-  storeBtnActive: { backgroundColor: C.accent, borderColor: C.accent },
+  storeBtnActive: { backgroundColor: C.accentDark, borderColor: C.accent },
+  addStoreBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: C.accentSoft, borderRadius: 10, padding: 14,
+    borderWidth: 1, borderColor: C.accent, marginTop: 4,
+  },
+  addStoreBtnText: { color: C.accent, fontWeight: '600', fontSize: 14 },
+  addStoreLinkRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6 },
+  addStoreLinkText: { color: C.muted, fontSize: 12 },
   btn: { backgroundColor: C.accent, borderRadius: 12, padding: 16, marginTop: 24, marginBottom: 40 },
   btnText: { color: C.white, textAlign: 'center', fontWeight: '700', fontSize: 16 },
 });
