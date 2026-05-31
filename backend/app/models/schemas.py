@@ -177,13 +177,24 @@ class NotificationOut(BaseModel):
     created_at: Optional[str] = None
 
 
-# ──────────────────────────── NLP (placeholder for Sprint 2) ────────
+# ──────────────────────────── NLP ────────────────────────────
 
 class NLPParseRequest(BaseModel):
     text: str
     store_id: Optional[str] = None
 
+
+class NLPProductMatch(BaseModel):
+    name: str
+    product_id: Optional[str] = None
+    quantity: int
+    unit_price: float
+    subtotal: float
+
+
 class NLPParseResponse(BaseModel):
-    order: dict  # OrderDraftRequest compatible dict
-    nlp_data: dict
-    questions: list[dict] | None = None
+    products: List[NLPProductMatch]
+    delivery_date: Optional[str] = None
+    total: float
+    requires_confirmation: bool = True
+    message: Optional[str] = None
