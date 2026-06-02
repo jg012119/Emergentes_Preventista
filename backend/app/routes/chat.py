@@ -1,6 +1,8 @@
 """Chat message routes."""
 
 import json
+import re
+import datetime
 import unicodedata
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -223,28 +225,234 @@ def _order_status_message(db, user_id: str, order_id: str | None) -> str:
 
 
 def _build_chat_reply(db, user_id: str, body: ChatMessageCreate) -> str | None:
+    """Generate a chat reply based on user message.
+    Handles product queries, missing presentation, quantity, stock checks,
+    date prompts, order status, and menu requests.
+    Supports multiple items in a single message separated by 'y', ',', '+', etc.
+    """
     if _is_structured_order_message(body.message):
         return None
 
     text = _normalize_text(body.message)
     status_filter = _find_status_filter(text)
 
+    # ── Generic intents (check FIRST, before product matching) ──
     if "menu" in text or "catalogo" in text or "productos" in text:
         return _build_product_menu(db, user_id)
 
     if "estado" in text or "seguimiento" in text or "como va" in text:
         return _order_status_message(db, user_id, body.order_id)
 
-    if "pedido" in text or "pedidos" in text or "ordenes" in text or "lista" in text:
+    if ("pedido" in text or "pedidos" in text or "ordenes" in text or "lista" in text) and not re.search(r"\d", text):
         return _list_orders_message(db, user_id, status_filter)
 
-    if status_filter:
+    if status_filter and not re.search(r"\d", text):
         return _list_orders_message(db, user_id, status_filter)
 
-    return (
-        "Puedo ayudarte con: menu de productos, estado del pedido, lista de pedidos, "
-        "pedidos pendientes, confirmados, rechazados, en proceso o pagados."
-    )
+    # Import NLP helpers
+    from app.routes.nlp import _best_product, _parse_quantity, _normalize, SPLIT_RE, _extract_delivery_date
+
+    # ── Helper: extract delivery date with multiple fallbacks ──
+    def _get_delivery(raw_text: str) -> str | None:
+        delivery = _extract_delivery_date(raw_text)
+        if delivery:
+            return delivery
+        # Fallback: "para <date text>"
+        m = re.search(r"para\s+(.+)", raw_text, re.IGNORECASE)
+        if m:
+            candidate = m.group(1).strip()
+            # Remove trailing product-like words that might have been captured
+            candidate = re.sub(r"\s+(y|mas|tambien)\s+.*$", "", candidate, flags=re.IGNORECASE).strip()
+            if candidate:
+                return candidate
+        # Fallback: bare "3 de junio" pattern
+        m2 = re.search(r"\b(\d{1,2}\s*de\s+\w+)\b", raw_text, re.IGNORECASE)
+        if m2:
+            return m2.group(1).strip()
+        return None
+
+    # ── Helper: detect size token WITHOUT matching bare numbers ──
+    SIZE_RE = re.compile(r"(\d+(?:\.\d+)?)\s*(ml|l|litros?)\b", re.IGNORECASE)
+
+    def _detect_size(seg: str) -> str | None:
+        m = SIZE_RE.search(seg)
+        return m.group(0).lower().strip() if m else None
+
+    # ── Helper: detect explicit quantity (only bare numbers NOT attached to a unit) ──
+    def _has_explicit_qty(seg: str) -> bool:
+        """Return True if there is a number that is NOT part of a size token."""
+        cleaned = SIZE_RE.sub("", seg)  # remove size tokens like '1l', '500ml'
+        cleaned = re.sub(r"\b\d{1,2}\s*de\s+\w+", "", cleaned, flags=re.IGNORECASE)  # remove date patterns
+        return bool(re.search(r"\b\d+\b", cleaned))
+
+    # ── Conversation state: check previous bot message ──
+    try:
+        prev_msgs = (
+            db.table("chat_messages")
+            .select("*")
+            .eq("user_id", user_id)
+            .order("created_at", desc=True)
+            .limit(2)
+            .execute()
+            .data
+        )
+        if len(prev_msgs) >= 2 and prev_msgs[1].get("sender") == "empresa":
+            last_bot = prev_msgs[1].get("message", "")
+            last_bot_lower = last_bot.lower()
+
+            # STATE: Awaiting presentation selection (user should answer with a number)
+            if "presentación" in last_bot_lower:
+                m = re.search(r"¿Qué presentación de (.+?) desea\?", last_bot)
+                if m:
+                    base_name = m.group(1).strip()
+                    variants = (
+                        db.table("products").select("*")
+                        .eq("active", True).ilike("name", f"{base_name}%")
+                        .execute().data
+                    )
+                    variants = sorted(variants, key=lambda p: p.get("name", ""))
+                    try:
+                        idx = int(body.message.strip()) - 1
+                        if 0 <= idx < len(variants):
+                            sel = variants[idx]
+                            return f"¿Cuántas unidades desea de {sel.get('name')}?"
+                    except ValueError:
+                        pass
+
+            # STATE: Awaiting quantity
+            elif "cuántas unidades desea de" in last_bot_lower:
+                try:
+                    qty = int(body.message.strip())
+                    m_qty = re.search(r"¿Cuántas unidades desea de (.+?)\?", last_bot)
+                    if m_qty:
+                        product_name = m_qty.group(1).strip()
+                        prod = (
+                            db.table("products").select("*")
+                            .eq("active", True).eq("name", product_name)
+                            .single().execute().data
+                        )
+                        if prod:
+                            stock = prod.get("stock", 0)
+                            if qty > stock:
+                                return f"Lo siento, solo hay {stock} unidades de {product_name} disponibles. ¿Desea esa cantidad?"
+                            delivery = _get_delivery(body.message)
+                            if delivery:
+                                return f"Orden recibida: {qty} unidades de {product_name} para {delivery}."
+                            return f"Entendido. ¿Para qué fecha desea la entrega de {qty} unidades de {product_name}?"
+                    return "Por favor, confirma el producto y la cantidad."
+                except ValueError:
+                    return "Por favor, ingresa una cantidad numérica válida."
+
+            # STATE: Awaiting delivery date
+            elif "fecha desea la entrega" in last_bot_lower:
+                m_date = re.search(r"(\d+) unidades de (.+?)\?", last_bot)
+                if m_date:
+                    qty = int(m_date.group(1))
+                    product_name = m_date.group(2).strip()
+                    delivery = _get_delivery(body.message)
+                    if delivery:
+                        return f"Orden recibida: {qty} unidades de {product_name} para {delivery}."
+                return "Por favor, indica la fecha de entrega (ej: mañana, 5 de junio)."
+    except Exception:
+        pass
+
+    # ── Product parsing: split into segments and match each ──
+    segments = [part for part in SPLIT_RE.split(_normalize(body.message)) if part]
+    if not segments and body.message:
+        segments = [_normalize(body.message)]
+
+    # Global delivery date from the full message
+    global_delivery = _get_delivery(body.message)
+
+    all_products = db.table("products").select("*").eq("active", True).execute().data or []
+    order_items = []
+
+    for seg in segments:
+        # Find product
+        product, _score = _best_product(seg, all_products)
+        if not product:
+            # Singular fallback: remove trailing 's'
+            singular_seg = re.sub(r"\b(\w+)s\b", r"\1", seg, flags=re.IGNORECASE)
+            product, _score = _best_product(singular_seg, all_products)
+        if not product:
+            continue  # skip unrecognized segments
+
+        # Size token
+        size_token = _detect_size(seg)
+
+        # If size found but doesn't match current product, find the right variant
+        if size_token and size_token not in product.get("name", "").lower():
+            base_name = re.sub(r"\s*\d+(?:\.\d+)?\s*(ml|l|litros?)$", "", product.get("name", ""), flags=re.IGNORECASE).strip()
+            variants = [p for p in all_products if _normalize_text(p.get("name", "")).startswith(_normalize_text(base_name))]
+            for v in variants:
+                if size_token in v.get("name", "").lower():
+                    product = v
+                    break
+
+        # Quantity
+        qty = _parse_quantity(seg)
+        explicit_qty = _has_explicit_qty(seg)
+
+        # Per-segment delivery
+        seg_delivery = _get_delivery(seg) or global_delivery
+
+        order_items.append({
+            "product": product,
+            "size_token": size_token,
+            "qty": qty,
+            "explicit_qty": explicit_qty,
+            "delivery": seg_delivery,
+        })
+
+    # ── No items matched ──
+    if not order_items:
+        return (
+            "Puedo ayudarte con: menu de productos, estado del pedido, lista de pedidos, "
+            "pedidos pendientes, confirmados, rechazados, en proceso o pagados."
+        )
+
+    # ── Process items: ask for missing info on the FIRST incomplete item ──
+    for itm in order_items:
+        product = itm["product"]
+        size_token = itm["size_token"]
+        qty = itm["qty"]
+        explicit_qty = itm["explicit_qty"]
+
+        # Missing presentation?
+        if not size_token:
+            base_name = re.sub(r"\s*\d+(?:\.\d+)?\s*(ml|l|litros?)$", "", product.get("name", ""), flags=re.IGNORECASE).strip()
+            variants = [p for p in all_products if _normalize_text(p.get("name", "")).startswith(_normalize_text(base_name))]
+            variants = sorted(variants, key=lambda p: p.get("name", ""))
+            if len(variants) > 1:
+                options = "\n".join([f"{i+1}. {v.get('name')}" for i, v in enumerate(variants)])
+                return f"¿Qué presentación de {base_name} desea?\n{options}"
+
+        # Missing quantity?
+        if qty == 1 and not explicit_qty:
+            return f"¿Cuántas unidades desea de {product.get('name')}?"
+
+        # Stock check
+        stock = product.get("stock", 0)
+        if qty > stock:
+            return f"Lo siento, solo hay {stock} unidades de {product.get('name')} disponibles. ¿Desea esa cantidad?"
+
+    # Check delivery date (shared across all items)
+    any_delivery = any(itm["delivery"] for itm in order_items)
+    if not any_delivery:
+        if len(order_items) == 1:
+            return f"¿Para qué fecha desea la entrega de {order_items[0]['qty']} unidades de {order_items[0]['product'].get('name')}?"
+        return "¿Para qué fecha desea la entrega?"
+
+    # ── All complete: build confirmation ──
+    if len(order_items) == 1:
+        itm = order_items[0]
+        return f"Orden recibida: {itm['qty']} unidades de {itm['product'].get('name')} para {itm['delivery']}."
+
+    lines = ["Orden recibida:"]
+    for itm in order_items:
+        delivery = itm["delivery"] or global_delivery or "sin fecha"
+        lines.append(f"- {itm['qty']} unidades de {itm['product'].get('name')} para {delivery}")
+    return "\n".join(lines)
 
 
 @router.post("/message", response_model=ChatMessageOut, status_code=201)

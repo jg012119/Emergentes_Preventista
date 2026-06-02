@@ -21,7 +21,7 @@ function Start-Component {
 
 # 1️⃣ Backend (FastAPI)
 $backendDir = Join-Path $PSScriptRoot "backend"
-$activateCmd = "& `"$backendDir\venv\Scripts\Activate.ps1`"; uvicorn app.main:app --reload"
+$activateCmd = "& `"$backendDir\venv\Scripts\Activate.ps1`"; uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
 Start-Component -Title "Backend (FastAPI)" -WorkingDir $backendDir -Command $activateCmd
 
 # 2️⃣ Web Panel (Vite + React)
@@ -31,7 +31,7 @@ Start-Component -Title "Web Panel" -WorkingDir $panelDir -Command $panelCmd
 
 # 3️⃣ Mobile App (React Native / Expo)
 $mobileDir = Join-Path $PSScriptRoot "mobile"
-$mobileCmd = "npm install; npx expo start"
+$mobileCmd = "npm install; npx expo start --tunnel"
 Start-Component -Title "Mobile App (Expo)" -WorkingDir $mobileDir -Command $mobileCmd
 
 Write-Host "All components launched. Check the new windows for logs."
