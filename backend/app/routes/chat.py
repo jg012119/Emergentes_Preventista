@@ -272,11 +272,24 @@ def _build_chat_reply(db, user_id: str, body: ChatMessageCreate) -> str | None:
         return None
 
     # ── Helper: detect size token WITHOUT matching bare numbers ──
+    from app.routes.nlp import SIZE_ALIASES
     SIZE_RE = re.compile(r"(\d+(?:\.\d+)?)\s*(ml|l|litros?)\b", re.IGNORECASE)
+    TEXT_SIZE_RE = re.compile(
+        r"\b(medio\s+litro|litro\s+y\s+medio|cuarto\s+de\s+litro|medio|cuarto|mediano|grande|pequeño|chico|familiar|personal|500|600|750|330|250|400|450|1\.5|2\.5|3\.3|2\.25)\b",
+        re.IGNORECASE,
+    )
 
     def _detect_size(seg: str) -> str | None:
+        # First try numeric: "500ml", "1l", "1.5l"
         m = SIZE_RE.search(seg)
-        return m.group(0).lower().strip() if m else None
+        if m:
+            return m.group(0).lower().strip()
+        # Then try text-based: "medio litro" -> "500ml"
+        m2 = TEXT_SIZE_RE.search(seg)
+        if m2:
+            key = re.sub(r"\s+", " ", m2.group(0).lower().strip())
+            return SIZE_ALIASES.get(key)
+        return None
 
     # ── Helper: detect explicit quantity (only bare numbers NOT attached to a unit) ──
     def _has_explicit_qty(seg: str) -> bool:

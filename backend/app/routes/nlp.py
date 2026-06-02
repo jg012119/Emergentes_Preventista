@@ -32,13 +32,58 @@ QUANTITY_WORDS = {
     "once": 11,
     "doce": 12,
     "docena": 12,
+    "trece": 13,
+    "catorce": 14,
+    "quince": 15,
+    "dieciseis": 16,
+    "diecisiete": 17,
+    "dieciocho": 18,
+    "diecinueve": 19,
+    "veinte": 20,
+    "veintiuno": 21,
+    "veintidos": 22,
+    "veintitres": 23,
+    "veinticuatro": 24,
+    "veinticinco": 25,
+    "treinta": 30,
+    "cuarenta": 40,
+    "cincuenta": 50,
+    "media docena": 6,
+}
+
+# Aliases for text-based sizes (normalized form -> canonical ml/l form)
+SIZE_ALIASES = {
+    "medio litro": "500ml",
+    "medio": "500ml",
+    "litro y medio": "1.5l",
+    "cuarto de litro": "250ml",
+    "cuarto": "250ml",
+    "mediano": "500ml",
+    "familiar": "2.5l",
+    "personal": "330ml",
+    "grande": "2.5l",
+    "chico": "330ml",
+    "pequeño": "330ml",
+    "500": "500ml",
+    "600": "600ml",
+    "750": "750ml",
+    "330": "330ml",
+    "250": "250ml",
+    "400": "400ml",
+    "450": "450ml",
+    "1.5": "1.5l",
+    "2.5": "2.5l",
+    "3.3": "3.3l",
+    "2.25": "2.25l",
 }
 
 FILLER_RE = re.compile(
     r"^(quiero|necesito|dame|manda|mandame|agrega|agregar|pedir|pedido|por favor|me das|ponme|seria)\s+",
     re.IGNORECASE,
 )
-SPLIT_RE = re.compile(r"\s*(?:,|;|\+|\by\b|\btambien\b|\badicionalmente\b|\bmas\b)\s+")
+SPLIT_RE = re.compile(
+    r"\s*(?:,|;|\+|\by\b|\btambien\b|\badicionalmente\b|\bmas\b|\bdespues\b|\bluego\b|\baparte\b|\bjunto\s+con\b|\bcon\b)\s+"
+)
 
 
 def _normalize(value: str) -> str:
@@ -62,6 +107,10 @@ def _unit_variants(value: str) -> set[str]:
             re.sub(r"(\d+)ml\b", r"\1 ml", item),
             re.sub(r"(\d+)\s*mililitros?\b", r"\1ml", item),
         }
+        # Add text-based size aliases (medio litro -> 500ml, etc.)
+        for alias, canonical in SIZE_ALIASES.items():
+            if alias in item:
+                generated.add(item.replace(alias, canonical))
         variants.update(_normalize(g) for g in generated if g)
     return {v for v in variants if v}
 
