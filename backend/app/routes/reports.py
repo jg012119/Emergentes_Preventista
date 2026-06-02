@@ -14,7 +14,7 @@ from app.utils.auth import get_current_user_id
 router = APIRouter(prefix="/reports", tags=["reports"])
 
 AUTO_SENDERS = {"system", "empresa", "agent", "agente"}
-CLOSED_STATUSES = {"confirmado", "rechazado"}
+CLOSED_STATUSES = {"confirmado", "rechazado", "pagado"}
 OPEN_STATUSES = {"pendiente", "en_proceso"}
 
 
@@ -72,8 +72,9 @@ async def get_agent_report(_user_id: str = Depends(get_current_user_id)):
     order_messages = [m for m in messages if m.get("order_id")]
     general_messages = [m for m in messages if not m.get("order_id")]
 
-    confirmed_orders = [o for o in orders if o.get("status") == "confirmado"]
+    confirmed_orders = [o for o in orders if o.get("status") in {"confirmado", "pagado"}]
     rejected_orders = [o for o in orders if o.get("status") == "rechazado"]
+    paid_orders = [o for o in orders if o.get("status") == "pagado"]
     closed_orders = [o for o in orders if o.get("status") in CLOSED_STATUSES]
     open_orders = [o for o in orders if o.get("status") in OPEN_STATUSES]
     draft_orders = [o for o in orders if o.get("status") == "borrador"]
@@ -173,6 +174,7 @@ async def get_agent_report(_user_id: str = Depends(get_current_user_id)):
             "rejected_orders": len(rejected_orders),
             "open_orders": len(open_orders),
             "draft_orders": len(draft_orders),
+            "paid_orders": len(paid_orders),
             "close_rate": _safe_percent(len(confirmed_orders), len(closed_orders)),
         },
         "values": {

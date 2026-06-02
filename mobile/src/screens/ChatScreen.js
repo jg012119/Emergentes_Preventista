@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { NativeModulesProxy } from 'expo-modules-core';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getChat, getGeneralChat, parseOrderText, sendMessage } from '../services/api';
+import { confirmOrder, getChat, getGeneralChat, parseOrderText, sendMessage } from '../services/api';
 import { colors as C } from '../theme';
 import { GradientScreen } from '../components/ScreenBackground';
 
@@ -125,6 +125,8 @@ export default function ChatScreen({ route, navigation }) {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
+  const [orderStatus, setOrderStatus] = useState(route?.params?.orderStatus ?? null);
+  const [submitting, setSubmitting] = useState(false);
   const [recognizing, setRecognizing] = useState(false);
   const [voiceHint, setVoiceHint] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -136,20 +138,30 @@ export default function ChatScreen({ route, navigation }) {
   const insets = useSafeAreaInsets();
 
   const scrollToBottom = useCallback(() => {
-    requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
+    setTimeout(() => {
+      try {
+        listRef.current?.scrollToOffset({ offset: 0, animated: true });
+      } catch (_) {}
+    }, 50);
   }, []);
 
   const load = useCallback(() => {
     const request = isOrderChat ? getChat(orderId) : getGeneralChat();
     request
       .then((data) => {
-        setMessages(Array.isArray(data) ? data : []);
+        const nextMsgs = Array.isArray(data) ? data : [];
+        setMessages((prev) => {
+          if (nextMsgs.length > prev.length) {
+            scrollToBottom();
+          }
+          return nextMsgs;
+        });
         setErrorMessage('');
       })
       .catch(() => {
         setErrorMessage('No se pudo actualizar el chat. Revisa la conexion.');
       });
-  }, [isOrderChat, orderId]);
+  }, [isOrderChat, orderId, scrollToBottom]);
 
   const sendTextMessage = useCallback(async (rawText, options = {}) => {
     const clean = String(rawText || '').trim();
@@ -306,6 +318,32 @@ export default function ChatScreen({ route, navigation }) {
     sendTextMessage(text);
   };
 
+  const handleSubmitOrder = async () => {
+    Alert.alert(
+      'Enviar pedido',
+      '¿Confirmas que quieres enviar este pedido? Quedará en estado Pendiente.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Enviar',
+          style: 'default',
+          onPress: async () => {
+            setSubmitting(true);
+            try {
+              await confirmOrder(orderId);
+              setOrderStatus('pendiente');
+              load();
+            } catch (e) {
+              Alert.alert('Error', e?.message || 'No se pudo enviar el pedido. Intenta de nuevo.');
+            } finally {
+              setSubmitting(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleVoice = async () => {
     const speech = speechModuleRef.current || getSpeechRecognitionModule();
     speechModuleRef.current = speech;
@@ -406,6 +444,24 @@ export default function ChatScreen({ route, navigation }) {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 4 : 0}
       >
+        {isOrderChat && orderStatus === 'borrador' ? (
+          <View style={s.submitBanner}>
+            <View style={s.submitBannerInfo}>
+              <Ionicons name="time-outline" size={18} color={C.warning} />
+              <Text style={s.submitBannerText}>Este pedido está en borrador</Text>
+            </View>
+            <TouchableOpacity
+              style={[s.submitButton, submitting && s.submitButtonDisabled]}
+              onPress={handleSubmitOrder}
+              disabled={submitting}
+              activeOpacity={0.82}
+            >
+              <Ionicons name="paper-plane-outline" size={16} color={C.white} />
+              <Text style={s.submitButtonText}>{submitting ? 'Enviando...' : 'Enviar pedido'}</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
         {!isOrderChat ? (
           <View style={s.shortcuts}>
             <TouchableOpacity style={s.shortcut} onPress={openCatalogForNewOrder}>
@@ -425,11 +481,11 @@ export default function ChatScreen({ route, navigation }) {
 
         <FlatList
           ref={listRef}
-          data={chatMessages}
+          data={[...chatMessages].reverse()}
+          inverted
           keyExtractor={(item) => String(item.id)}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={s.listContent}
-          onContentSizeChange={scrollToBottom}
           renderItem={({ item }) => {
             const isUser = item.sender === 'user';
             const parsed = parseMessageParts(item.message);
@@ -627,8 +683,6 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
     paddingTop: 12,
     paddingBottom: 12,
-    flexGrow: 1,
-    justifyContent: 'flex-end',
   },
   bubble: {
     maxWidth: '82%',
@@ -763,4 +817,48 @@ const s = StyleSheet.create({
   stopButton: { backgroundColor: C.danger },
   sendButton: { backgroundColor: C.accent },
   disabledButton: { opacity: 0.6 },
+  submitBanner: {
+    marginHorizontal: 12,
+    marginTop: 10,
+    marginBottom: 4,
+    borderRadius: 14,
+    backgroundColor: 'rgba(245,158,11,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(245,158,11,0.35)',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  submitBannerInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
+  },
+  submitBannerText: {
+    color: C.warning,
+    fontSize: 13,
+    fontWeight: '700',
+    flexShrink: 1,
+  },
+  submitButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: C.accent,
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  submitButtonDisabled: {
+    opacity: 0.6,
+  },
+  submitButtonText: {
+    color: C.white,
+    fontSize: 13,
+    fontWeight: '800',
+  },
 });

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getOrders } from '../services/api'
 
-const STATUS_OPTIONS = ['todos', 'pendiente', 'confirmado', 'rechazado', 'en_proceso', 'borrador']
+const STATUS_OPTIONS = ['todos', 'pendiente', 'confirmado', 'rechazado', 'en_proceso', 'pagado', 'borrador']
 
 export default function Orders() {
   const [orders, setOrders] = useState([])

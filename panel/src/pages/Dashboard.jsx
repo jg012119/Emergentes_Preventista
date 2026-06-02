@@ -18,7 +18,7 @@ export default function Dashboard() {
   const stats = {
     total: orders.length,
     pendiente: orders.filter(o => o.status === 'pendiente').length,
-    confirmado: orders.filter(o => o.status === 'confirmado').length,
+    confirmado: orders.filter(o => o.status === 'confirmado' || o.status === 'pagado').length,
     rechazado: orders.filter(o => o.status === 'rechazado').length,
     en_proceso: orders.filter(o => o.status === 'en_proceso').length,
   }
@@ -65,7 +65,7 @@ export default function Dashboard() {
           </div>
           <div className="stat-info">
             <h3>{stats.confirmado}</h3>
-            <p>Confirmados</p>
+            <p>Confirmados / Pagados</p>
           </div>
         </div>
         <div className="card stat-card">

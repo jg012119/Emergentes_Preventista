@@ -71,6 +71,17 @@ export default function OrderConfirmScreen({ route, navigation }) {
           <Text style={{ color: C.muted, textAlign: 'center' }}>Volver a editar</Text>
         </View>
       </TouchableOpacity>
+
+      <TouchableOpacity
+        style={s.saveExitBtn}
+        onPress={() => {
+          Alert.alert('Borrador guardado', 'Tus cambios fueron guardados como borrador. Podrás enviarlo más tarde.', [
+            { text: 'OK', onPress: () => navigation.navigate('Main', { screen: 'Pedidos' }) }
+          ]);
+        }}
+      >
+        <Text style={s.saveExitText}>Guardar borrador y salir</Text>
+      </TouchableOpacity>
     </GradientScrollView>
   );
 }
@@ -91,5 +102,7 @@ const s = StyleSheet.create({
   btn: { backgroundColor: C.accent, borderRadius: 18, padding: 16, marginTop: 24 },
   btnRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
   btnText: { color: C.white, textAlign: 'center', fontWeight: '700', fontSize: 17 },
-  cancelBtn: { marginTop: 16, padding: 12, marginBottom: 40 },
+  cancelBtn: { marginTop: 16, padding: 12 },
+  saveExitBtn: { marginTop: 8, padding: 12, alignItems: 'center', marginBottom: 40 },
+  saveExitText: { color: C.accentLight, fontWeight: '600', fontSize: 14, textDecorationLine: 'underline' },
 });

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { getOrder } from '../services/api';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { getOrder, confirmOrder } from '../services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { colors as C, statusColors } from '../theme';
 import { GradientScreen, GradientScrollView } from '../components/ScreenBackground';
@@ -9,10 +9,47 @@ export default function OrderDetailScreen({ route, navigation }) {
   const { orderId } = route.params;
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     getOrder(orderId).then(setOrder).catch(() => navigation.goBack()).finally(() => setLoading(false));
   }, [orderId, navigation]);
+
+  const handleConfirmOrder = () => {
+    Alert.alert(
+      'Confirmar pedido',
+      '¿Confirmas que quieres enviar este pedido a AJE? Quedará en estado Pendiente.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Enviar',
+          style: 'default',
+          onPress: async () => {
+            setSubmitting(true);
+            try {
+              const confirmed = await confirmOrder(orderId);
+              setOrder(confirmed);
+              Alert.alert('Pedido enviado', 'Tu pedido fue enviado correctamente a AJE.');
+            } catch (e) {
+              Alert.alert('Error', e?.message || 'No se pudo confirmar el pedido. Intenta de nuevo.');
+            } finally {
+              setSubmitting(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleEditOrder = () => {
+    if (!order) return;
+    navigation.navigate('Catalog', {
+      initialCart: order.items,
+      isEditingOrderId: order.id,
+      sendToChat: false,
+      orderId: null,
+    });
+  };
 
   if (loading || !order) {
     return (
@@ -55,7 +92,35 @@ export default function OrderDetailScreen({ route, navigation }) {
         </View>
       </View>
 
-      <TouchableOpacity style={s.chatBtn} onPress={() => navigation.navigate('OrderChat', { orderId: order.id })}>
+      {order.status === 'borrador' ? (
+        <View style={s.borradorContainer}>
+          <TouchableOpacity
+            style={[s.btn, s.btnSuccess, submitting && { opacity: 0.6 }]}
+            onPress={handleConfirmOrder}
+            disabled={submitting}
+            activeOpacity={0.82}
+          >
+            <View style={s.btnRow}>
+              <Ionicons name="paper-plane-outline" size={20} color={C.white} />
+              <Text style={s.btnText}>{submitting ? 'Enviando...' : 'Confirmar y Enviar Pedido'}</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[s.btn, s.btnOutline]}
+            onPress={handleEditOrder}
+            disabled={submitting}
+            activeOpacity={0.82}
+          >
+            <View style={s.btnRow}>
+              <Ionicons name="create-outline" size={20} color={C.accentLight} />
+              <Text style={[s.btnText, s.btnTextOutline]}>Editar Pedido</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+      ) : null}
+
+      <TouchableOpacity style={s.chatBtn} onPress={() => navigation.navigate('OrderChat', { orderId: order.id, orderStatus: order.status })}>
         <View style={s.chatRow}>
           <Ionicons name="chatbubble-ellipses-outline" size={20} color={C.white} />
           <Text style={{ color: C.white, fontWeight: '700', textAlign: 'center' }}>Ver Chat del Pedido</Text>
@@ -77,6 +142,38 @@ const s = StyleSheet.create({
   sectionTitle: { color: C.muted, fontSize: 12, fontWeight: '600', textTransform: 'uppercase', marginBottom: 12 },
   item: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.border, gap: 8 },
   totalRow: { borderTopWidth: 1, borderTopColor: C.border, marginTop: 8, paddingTop: 12, flexDirection: 'row', justifyContent: 'space-between' },
-  chatBtn: { backgroundColor: C.accent, borderRadius: 18, padding: 16, marginTop: 20, marginBottom: 40 },
+  chatBtn: { backgroundColor: C.accent, borderRadius: 18, padding: 16, marginTop: 14, marginBottom: 40 },
   chatRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
+  borradorContainer: {
+    marginTop: 20,
+    gap: 10,
+  },
+  btn: {
+    borderRadius: 18,
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  btnSuccess: {
+    backgroundColor: '#10b981',
+  },
+  btnOutline: {
+    backgroundColor: C.surfaceAlt,
+    borderWidth: 1,
+    borderColor: C.borderStrong,
+  },
+  btnRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+  },
+  btnText: {
+    color: C.white,
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  btnTextOutline: {
+    color: C.accentLight,
+  },
 });

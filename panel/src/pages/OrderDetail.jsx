@@ -162,6 +162,16 @@ export default function OrderDetail() {
                     {updating === 'en_proceso' ? 'Procesando...' : 'En Proceso'}
                   </button>
                 )}
+                {order.status !== 'pagado' && (order.status === 'en_proceso' || order.status === 'confirmado') && (
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={() => changeStatus('pagado')}
+                    disabled={!!updating}
+                  >
+                    <CheckCircle size={16} />
+                    {updating === 'pagado' ? 'Marcando Pagado...' : 'Marcar como Pagado'}
+                  </button>
+                )}
                 {order.status !== 'rechazado' && (
                   <button
                     className="btn btn-danger btn-sm"

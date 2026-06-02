@@ -1,12 +1,12 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { getStores, createDraft, sendMessage } from '../services/api';
+import { getStores, createDraft, updateDraft, sendMessage } from '../services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { colors as C } from '../theme';
 
 export default function CreateOrderScreen({ route, navigation }) {
-  const { cart, sendToChat = false, orderId = null } = route.params;
+  const { cart, sendToChat = false, orderId = null, isEditingOrderId = null } = route.params;
   const [stores, setStores] = useState([]);
   const [selectedStore, setSelectedStore] = useState(null);
   const [deliveryDate] = useState(new Date(Date.now() + 86400000));
@@ -51,11 +51,15 @@ export default function CreateOrderScreen({ route, navigation }) {
     }
     setLoading(true);
     try {
-      const order = await createDraft({
+      const orderData = {
         store_id: selectedStore,
         delivery_date: deliveryDate.toISOString().split('T')[0],
         items: cart.map((item) => ({ product_id: item.id, quantity: item.qty })),
-      });
+      };
+
+      const order = isEditingOrderId
+        ? await updateDraft(isEditingOrderId, orderData)
+        : await createDraft(orderData);
 
       if (sendToChat) {
         const store = stores.find((item) => item.id === selectedStore);
@@ -130,7 +134,7 @@ export default function CreateOrderScreen({ route, navigation }) {
 
       <TouchableOpacity style={[s.btn, loading && { opacity: 0.6 }]} onPress={handleCreate} disabled={loading}>
         <Text style={s.btnText}>
-          {loading ? 'Creando...' : sendToChat ? 'Crear Pedido y Confirmar' : 'Crear Pedido Borrador'}
+          {loading ? 'Guardando...' : sendToChat ? 'Crear Pedido y Confirmar' : isEditingOrderId ? 'Guardar Cambios' : 'Crear Pedido Borrador'}
         </Text>
       </TouchableOpacity>
     </ScrollView>

@@ -305,6 +305,7 @@ tbody tr:hover { background: var(--bg-hover); }
 .badge-rechazado { background: var(--danger-bg); color: var(--danger); }
 .badge-en_proceso { background: var(--info-bg); color: var(--info); }
 .badge-borrador { background: var(--accent-bg); color: var(--accent-light); }
+.badge-pagado { background: var(--success-bg); color: var(--success); }
 
 /* ── Buttons ── */
 .btn {

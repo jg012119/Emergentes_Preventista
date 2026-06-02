@@ -11,6 +11,7 @@ STATUS_LABELS = {
     "confirmado": "Confirmado",
     "rechazado": "Rechazado",
     "en_proceso": "En Proceso",
+    "pagado": "Pagado",
 }
 
 

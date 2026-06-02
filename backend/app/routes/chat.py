@@ -20,6 +20,7 @@ STATUS_LABELS = {
     "confirmado": "Confirmado",
     "rechazado": "Rechazado",
     "en_proceso": "En proceso",
+    "pagado": "Pagado",
 }
 
 STATUS_PLURAL_LABELS = {
@@ -28,6 +29,7 @@ STATUS_PLURAL_LABELS = {
     "confirmado": "confirmados",
     "rechazado": "rechazados",
     "en_proceso": "en proceso",
+    "pagado": "pagados",
 }
 
 STATUS_ALIASES = {
@@ -43,6 +45,8 @@ STATUS_ALIASES = {
     "procesando": "en_proceso",
     "en proceso": "en_proceso",
     "en_proceso": "en_proceso",
+    "pagado": "pagado",
+    "pagados": "pagado",
 }
 
 
@@ -239,7 +243,7 @@ def _build_chat_reply(db, user_id: str, body: ChatMessageCreate) -> str | None:
 
     return (
         "Puedo ayudarte con: menu de productos, estado del pedido, lista de pedidos, "
-        "pedidos pendientes, confirmados, rechazados o en proceso."
+        "pedidos pendientes, confirmados, rechazados, en proceso o pagados."
     )
 
 

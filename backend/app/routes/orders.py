@@ -13,7 +13,7 @@ from app.services.notification_service import notify_status_change
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
-VALID_STATUSES = {"pendiente", "confirmado", "rechazado", "en_proceso"}
+VALID_STATUSES = {"pendiente", "confirmado", "rechazado", "en_proceso", "pagado"}
 
 
 def _validate_delivery_date(delivery_date: date) -> None:
@@ -127,6 +127,78 @@ async def create_draft(body: OrderDraftRequest, user_id: str = Depends(get_curre
     return _enrich_order(order, db)
 
 
+@router.put("/{order_id}/draft", response_model=OrderOut)
+async def update_draft(
+    order_id: str,
+    body: OrderDraftRequest,
+    user_id: str = Depends(get_current_user_id),
+):
+    db = get_supabase_admin()
+
+    # Verify order exists and belongs to user
+    result = db.table("orders").select("*").eq("id", order_id).eq("user_id", user_id).execute()
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
+
+    order = result.data[0]
+    if order["status"] != "borrador":
+        raise HTTPException(status_code=400, detail="Solo se pueden modificar pedidos en estado borrador")
+
+    # Verify store belongs to user
+    store = db.table("stores").select("id").eq("id", body.store_id).eq("user_id", user_id).execute()
+    if not store.data:
+        raise HTTPException(status_code=404, detail="Tienda no encontrada")
+
+    # Validate products & stock, compute total
+    total = 0.0
+    items_to_insert = []
+    for item in body.items:
+        prod_result = db.table("products").select("*").eq("id", item.product_id).eq("active", True).execute()
+        if not prod_result.data:
+            raise HTTPException(status_code=400, detail=f"Producto {item.product_id} no encontrado o inactivo")
+
+        product = prod_result.data[0]
+        if product["stock"] < item.quantity:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Stock insuficiente para {product['name']}. Disponible: {product['stock']}, Solicitado: {item.quantity}",
+            )
+
+        subtotal = product["price"] * item.quantity
+        total += subtotal
+        items_to_insert.append({
+            "order_id": order_id,
+            "product_id": item.product_id,
+            "quantity": item.quantity,
+            "unit_price": product["price"],
+            "subtotal": subtotal,
+        })
+
+    # Update order
+    db.table("orders").update({
+        "store_id": body.store_id,
+        "delivery_date": str(body.delivery_date),
+        "total": total,
+        "notes": body.notes or "",
+    }).eq("id", order_id).execute()
+
+    # Clear old items and insert new ones
+    db.table("order_items").delete().eq("order_id", order_id).execute()
+    db.table("order_items").insert(items_to_insert).execute()
+
+    # Add system message to chat
+    db.table("chat_messages").insert({
+        "user_id": user_id,
+        "order_id": order_id,
+        "message": f"Pedido borrador actualizado. Nuevo total: Bs {total:.2f}.",
+        "sender": "system",
+    }).execute()
+
+    # Get updated order
+    updated = db.table("orders").select("*").eq("id", order_id).execute()
+    return _enrich_order(updated.data[0], db)
+
+
 @router.post("/{order_id}/confirm", response_model=OrderOut)
 async def confirm_order(order_id: str, user_id: str = Depends(get_current_user_id)):
     db = get_supabase_admin()
@@ -230,7 +302,7 @@ async def update_order_status(
     old_status = old_order["status"]
 
     # If rejecting, restore stock
-    if body.status == "rechazado" and old_status in ("pendiente", "confirmado", "en_proceso"):
+    if body.status == "rechazado" and old_status in ("pendiente", "confirmado", "en_proceso", "pagado"):
         items = db.table("order_items").select("*").eq("order_id", order_id).execute()
         for item in items.data:
             prod = db.table("products").select("stock").eq("id", item["product_id"]).execute()

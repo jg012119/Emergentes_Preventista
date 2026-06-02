@@ -119,5 +119,5 @@ ON CONFLICT DO NOTHING;
 -- ─── Admin user seed (password: admin123) ────────────────────
 -- Hash for 'admin123' generated with bcrypt
 INSERT INTO users (name, email, phone, password_hash, role) VALUES
-    ('AJE Admin', 'admin@aje.com', '77700000', '$2b$12$LJ3mFGOj7GHTve7rE6J/WOaHF8MnFt3FPr0VlCjHwF3HVq3MCH5/u', 'admin')
+    ('AJE Admin', 'admin@aje.com', '77700000', '$2b$12$CAdtButIc7g4iXP0Fm3pXeTBdWSgR1uox9OintGf6LdNsRycXqxlm', 'admin')
 ON CONFLICT (email) DO NOTHING;

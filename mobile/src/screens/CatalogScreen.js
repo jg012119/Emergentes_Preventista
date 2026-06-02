@@ -7,8 +7,26 @@ import { GradientScreen } from '../components/ScreenBackground';
 export default function CatalogScreen({ route, navigation }) {
   const sendToChat = Boolean(route?.params?.sendToChat);
   const orderId = route?.params?.orderId ?? null;
+  const isEditingOrderId = route?.params?.isEditingOrderId ?? null;
+  const initialCart = route?.params?.initialCart ?? null;
+
   const [products, setProducts] = useState([]);
-  const [cart, setCart] = useState({});
+  const [cart, setCart] = useState(() => {
+    const init = {};
+    if (initialCart && Array.isArray(initialCart)) {
+      initialCart.forEach((item) => {
+        const pid = item.product_id;
+        init[pid] = {
+          id: pid,
+          name: item.product_name || 'Producto',
+          price: Number(item.unit_price || 0),
+          qty: Number(item.quantity || 1),
+          stock: 999, // default safety, stock will be overwritten by product list
+        };
+      });
+    }
+    return init;
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -38,7 +56,7 @@ export default function CatalogScreen({ route, navigation }) {
   const total = items.reduce((sum, item) => sum + item.price * item.qty, 0);
 
   const goNext = () => {
-    navigation.navigate('CreateOrder', { cart: items, sendToChat, orderId });
+    navigation.navigate('CreateOrder', { cart: items, sendToChat, orderId, isEditingOrderId });
   };
 
   return (
