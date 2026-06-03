@@ -8,8 +8,8 @@ from typing import Any
 
 from fastapi import APIRouter, Depends
 
-from app.config import get_supabase_admin
-from app.utils.auth import get_current_user_id
+from ..config import get_supabase_admin
+from ..utils.auth import get_current_user_id
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 

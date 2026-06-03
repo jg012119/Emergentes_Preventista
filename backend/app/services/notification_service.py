@@ -4,7 +4,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-from app.config import EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASSWORD
+from ..config import EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASSWORD
 
 STATUS_LABELS = {
     "pendiente": "Pendiente",

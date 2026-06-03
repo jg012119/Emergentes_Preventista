@@ -8,7 +8,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 
-from app.config import JWT_SECRET, JWT_ALGORITHM, JWT_EXPIRATION_MINUTES
+from ..config import JWT_SECRET, JWT_ALGORITHM, JWT_EXPIRATION_MINUTES
 
 security = HTTPBearer()
 

@@ -2,9 +2,9 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.config import get_supabase_admin
-from app.models.schemas import StoreCreate, StoreUpdate, StoreOut
-from app.utils.auth import get_current_user_id
+from ..config import get_supabase_admin
+from ..models.schemas import StoreCreate, StoreUpdate, StoreOut
+from ..utils.auth import get_current_user_id
 
 router = APIRouter(prefix="/stores", tags=["stores"])
 

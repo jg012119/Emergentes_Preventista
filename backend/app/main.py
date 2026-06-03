@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routes import auth, users, stores, products, orders, chat, notifications, reports, nlp
+from .routes import auth, users, stores, products, orders, chat, notifications, reports, nlp
 
 app = FastAPI(
     title="Preventista Inteligente AJE",

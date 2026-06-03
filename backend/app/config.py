@@ -46,7 +46,7 @@ _USE_LOCAL_DB = (
 )
 
 if _USE_LOCAL_DB:
-    from app.local_db import get_local_client
+    from .local_db import get_local_client
     print("[WARNING] Supabase credentials not configured or invalid - using LOCAL SQLite database")
 else:
     from supabase import create_client, Client

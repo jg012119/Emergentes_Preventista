@@ -1,7 +1,7 @@
 // mobile/src/services/api.js
 // Wrapper around the FastAPI backend for chat, auth, stores, products, and order operations.
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://192.168.100.41:8000";
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://10.253.2.79:8000";
 
 let _token = null;
 

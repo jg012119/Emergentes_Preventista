@@ -10,9 +10,9 @@ from dateparser.search import search_dates
 from fastapi import APIRouter, Depends
 from rapidfuzz import fuzz
 
-from app.config import get_supabase_admin
-from app.models.schemas import NLPParseRequest, NLPParseResponse, NLPProductMatch
-from app.utils.auth import get_current_user_id
+from ..config import get_supabase_admin
+from ..models.schemas import NLPParseRequest, NLPParseResponse, NLPProductMatch
+from ..utils.auth import get_current_user_id
 
 router = APIRouter(prefix="/nlp", tags=["nlp"])
 
@@ -32,6 +32,7 @@ QUANTITY_WORDS = {
     "once": 11,
     "doce": 12,
     "docena": 12,
+    "una docena": 12,
     "trece": 13,
     "catorce": 14,
     "quince": 15,
@@ -58,12 +59,21 @@ SIZE_ALIASES = {
     "litro y medio": "1.5l",
     "cuarto de litro": "250ml",
     "cuarto": "250ml",
+    "de litro": "1l",
+    "litro": "1l",
     "mediano": "500ml",
+    "medianos": "500ml",
     "familiar": "2.5l",
+    "familiares": "2.5l",
     "personal": "330ml",
+    "personales": "330ml",
     "grande": "2.5l",
-    "chico": "330ml",
-    "pequeño": "330ml",
+    "grandes": "2.5l",
+    "chico": "300ml",
+    "chicos": "300ml",
+    "pequeño": "300ml",
+    "pequeños": "300ml",
+    "300": "300ml",
     "500": "500ml",
     "600": "600ml",
     "750": "750ml",
@@ -77,8 +87,24 @@ SIZE_ALIASES = {
     "2.25": "2.25l",
 }
 
+ORTHO_MAP = {
+    "biq cola": "big cola",
+    "bigc cola": "big cola",
+    "volt 300": "volt 300ml",
+    "volt 500ml": "volt 500ml",
+    "litruz": "litros",
+    "litrs": "litros",
+    "lt": "l",
+    "aguas": "agua",
+    "agua": "agua",
+    "agua": "agua",
+    "aguas": "agua",
+    "aguas": "agua",
+    "agua": "agua",
+}
+
 FILLER_RE = re.compile(
-    r"^(quiero|necesito|dame|manda|mandame|agrega|agregar|pedir|pedido|por favor|me das|ponme|seria)\s+",
+    r"^(quiero|necesito|dame|manda|mandame|agrega|agregar|pedir|pedido|por favor|me das|ponme|seria|casero|caserita|anotame|dejame|para mi tiendita|para mi tienda|para el almacen|tiendita|tienda|almacen|porfa|porfis|hola|buen dia|buenas tardes|buenas noches)\s+",
     re.IGNORECASE,
 )
 SPLIT_RE = re.compile(
@@ -86,8 +112,18 @@ SPLIT_RE = re.compile(
 )
 
 
+def _apply_ortho(text: str) -> str:
+    """Replace known misspellings with correct tokens."""
+    for wrong, right in ORTHO_MAP.items():
+        pattern = re.compile(rf"\b{re.escape(wrong)}\b", re.IGNORECASE)
+        text = pattern.sub(right, text)
+    return text
+
+
 def _normalize(value: str) -> str:
-    text = unicodedata.normalize("NFKD", value or "")
+    # First apply orthographic fixes
+    text = _apply_ortho(value or "")
+    text = unicodedata.normalize("NFKD", text)
     text = "".join(ch for ch in text if not unicodedata.combining(ch))
     text = text.lower()
     text = text.replace("-", " ")
@@ -145,6 +181,15 @@ def _parse_quantity(segment: str) -> int:
     if match:
         return max(1, int(match.group(1)))
 
+    # Sort multi-word quantities first
+    sorted_quants = sorted(QUANTITY_WORDS.items(), key=lambda x: len(x[0].split()), reverse=True)
+    
+    # Try exact phrase matches first
+    for phrase, val in sorted_quants:
+        if re.search(rf"\b{phrase}\b", clean):
+            return val
+
+    # Try token based matching for robust fallbacks
     tokens = clean.split()[:4]
     for token in tokens:
         if token in QUANTITY_WORDS:
@@ -153,7 +198,17 @@ def _parse_quantity(segment: str) -> int:
 
 
 def _best_product(segment: str, products: list[dict[str, Any]]) -> tuple[dict[str, Any] | None, int]:
-    segment_variants = _unit_variants(segment)
+    # Strip quantities from segment so "2 volt" doesn't match "2L"
+    clean_seg = _clean_segment(segment)
+    if clean_seg:
+        sorted_quants = sorted(QUANTITY_WORDS.keys(), key=lambda x: len(x.split()), reverse=True)
+        for q in sorted_quants:
+            clean_seg = re.sub(rf"\b{q}\b", "", clean_seg, flags=re.IGNORECASE)
+        # Remove standalone numbers that are NOT attached to ml/l
+        clean_seg = re.sub(r"\b\d+(?:\.\d+)?\b(?!\s*(?:ml|l|litros?))", "", clean_seg, flags=re.IGNORECASE)
+        clean_seg = re.sub(r"\s+", " ", clean_seg).strip()
+    
+    segment_variants = _unit_variants(clean_seg or segment)
     best_product = None
     best_score = 0
 
@@ -166,6 +221,21 @@ def _best_product(segment: str, products: list[dict[str, Any]]) -> tuple[dict[st
         if score > best_score:
             best_product = product
             best_score = score
+
+    # Fallback: if nothing found or low confidence, do a broad fuzzy match
+    if not best_product or best_score < 70:
+        # Compute best fuzzy ratio across all product names
+        for product in products:
+            name = product.get("name", "")
+            # simple ratio on cleaned segment (remove numbers/size tokens)
+            cleaned_seg = re.sub(r"\b\d+(?:\.\d+)?\s*(ml|l|lt|lts|litros?|litruz|litrs)\b", "", segment, flags=re.IGNORECASE)
+            cleaned_seg = cleaned_seg.strip()
+            if not cleaned_seg:
+                continue
+            ratio = fuzz.ratio(cleaned_seg.lower(), name.lower())
+            if ratio > best_score:
+                best_product = product
+                best_score = ratio
 
     if best_score < 64:
         return None, best_score

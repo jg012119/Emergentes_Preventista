@@ -4,12 +4,12 @@ from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.config import get_supabase_admin
-from app.models.schemas import (
+from ..config import get_supabase_admin
+from ..models.schemas import (
     OrderDraftRequest, OrderOut, OrderItemOut, OrderStatusUpdate, OrderDeliveryDateUpdate,
 )
-from app.utils.auth import get_current_user_id
-from app.services.notification_service import notify_status_change
+from ..utils.auth import get_current_user_id
+from ..services.notification_service import notify_status_change
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
