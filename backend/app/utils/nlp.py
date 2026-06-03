@@ -25,43 +25,38 @@ def fetch_active_products(db) -> List[Dict[str, Any]]:
     return result.data
 
 def match_product(name: str, products: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
-    """Find the best fuzzy match for a product name.
-    Returns the matching product dict (id, name) and confidence score.
-    """
-    choices = {p["name"]: p for p in products}
-    match, score, _ = process.extractOne(
-        name,
-        list(choices.keys()),
-        scorer=fuzz.WRatio,
-    )
-    if score < 70:  # threshold for acceptable match
-        return None
-    product = choices[match]
-    product["match_score"] = score
-    return product
+    """Exact case‑insensitive match for a product name.
+    Returns the matching product dict (id, name) or None if not found."""
+    for product in products:
+        if product["name"].lower() == name.lower():
+            return product
+    return None
 
 def extract_quantities(doc) -> List[Dict[str, Any]]:
     """Extract quantity‑product pairs from a spaCy doc.
-    Returns a list of dicts: {"name": str, "quantity": int}
+    Handles patterns like "2 L Coca Cola", "2L Coca Cola" and also
+    cases where the quantity appears before the product name or stands
+    alone (e.g., user says "2" then later mentions "Coca Cola").
+    The function will:
+      * Return items with both name and quantity when both are detected.
+      * Keep a pending quantity if no product token follows.
+      * When a later product token appears, associate the pending quantity
+        with that product (contextual linking).
+    The caller (`parse_order`) will generate a clarification question if
+    a quantity remains without a product.
     """
-    items = []
-    # Simple heuristic: look for a numeral followed by a noun (product)
-    for token in doc:
-        if token.like_num:
-            # Capture the number (int) and the next token that is a noun or proper noun
-            qty = int(token.text)
-            # Look ahead for the product name (could be multiple tokens)
-            product_tokens = []
-            nxt = token.nbor(1) if token.i + 1 < len(doc) else None
-            while nxt and nxt.pos_ in {"NOUN", "PROPN", "ADJ"}:
-                product_tokens.append(nxt.text)
-                if nxt.i + 1 < len(doc):
-                    nxt = doc[nxt.i + 1]
-                else:
-                    break
+    items: List[Dict[str, Any]] = []
+    pending_qty: Optional[int] = None
+    last_product_name: Optional[str] = None
+    i = 0
+    while i < len(doc):
+        token = doc[i]
+        # Direct "2L" token (e.g., "2L", "3L")
+        if token.text.lower().endswith('l') and token.text[:-1].isdigit():
+            qty = int(token.text[:-1])
+                nxt = doc[nxt.i + 1] if nxt.i + 1 < len(doc) else None
             if product_tokens:
-                product_name = " ".join(product_tokens)
-                items.append({"name": product_name, "quantity": qty})
+                items.append({"name": " ".join(product_tokens), "quantity": qty})
     return items
 
 def extract_date(text: str) -> Optional[date]:
@@ -96,6 +91,15 @@ def parse_order(text: str, db) -> Dict[str, Any]:
     for item in extracted_items:
         match = match_product(item["name"], products)
         if not match:
+            # Fallback: try to find a product that contains the generic name and a size that matches the quantity
+            qty = item["quantity"]
+            size_variants = [f"{qty}L", f"{qty} L", f"{qty}ml", f"{qty} ml"]
+            possible = [p for p in products if item["name"].lower() in p["name"].lower()]
+            for p in possible:
+                if any(variant.lower() in p["name"].lower() for variant in size_variants):
+                    match = p
+                    break
+        if not match:
             questions.append({
                 "type": "product",
                 "message": f"No se encontró el producto '{item['name']}'. ¿Podrías especificar el nombre exacto?",
@@ -116,12 +120,6 @@ def parse_order(text: str, db) -> Dict[str, Any]:
     parsed_date = extract_date(text)
     if parsed_date:
         nlp_data["date"] = parsed_date.isoformat()
-    else:
-        # If a date is required but not found, ask the user
-        questions.append({
-            "type": "date",
-            "message": "¿Cuál es la fecha de entrega deseada? (por ejemplo, 'mañana a las 10')"
-        })
 
     # Build the order draft structure
     order = {

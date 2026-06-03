@@ -197,9 +197,30 @@ def _parse_quantity(segment: str) -> int:
     return 1
 
 
+# Words that indicate date/time context — should be stripped before product matching
+_DATE_FILLER_RE = re.compile(
+    r"\b(para|manana|mañana|hoy|ayer|lunes|martes|miercoles|jueves|viernes|sabado|domingo"
+    r"|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre"
+    r"|esta semana|la semana|proximo|proxima|siguiente|despues|luego|tarde|noche|dia)\b",
+    re.IGNORECASE,
+)
+
+# Pattern that matches segments which are ONLY size/volume info (no product name)
+_ONLY_SIZE_RE = re.compile(
+    r"^[\d\s.,xX]*(ml|l|lt|lts|litros?|litruz|litrs)?$",
+    re.IGNORECASE,
+)
+
+
 def _best_product(segment: str, products: list[dict[str, Any]]) -> tuple[dict[str, Any] | None, int]:
     # Strip quantities from segment so "2 volt" doesn't match "2L"
     clean_seg = _clean_segment(segment)
+
+    # Remove date/time filler words so "para mañana" doesn't pollute matching
+    if clean_seg:
+        clean_seg = _DATE_FILLER_RE.sub("", clean_seg)
+        clean_seg = re.sub(r"\s+", " ", clean_seg).strip()
+
     if clean_seg:
         sorted_quants = sorted(QUANTITY_WORDS.keys(), key=lambda x: len(x.split()), reverse=True)
         for q in sorted_quants:
@@ -207,7 +228,12 @@ def _best_product(segment: str, products: list[dict[str, Any]]) -> tuple[dict[st
         # Remove standalone numbers that are NOT attached to ml/l
         clean_seg = re.sub(r"\b\d+(?:\.\d+)?\b(?!\s*(?:ml|l|litros?))", "", clean_seg, flags=re.IGNORECASE)
         clean_seg = re.sub(r"\s+", " ", clean_seg).strip()
-    
+
+    # ⛔ Guard: if what remains is ONLY a size token (e.g. "1l", "500ml"),
+    # there is no product name to match — skip to avoid false positives.
+    if not clean_seg or _ONLY_SIZE_RE.fullmatch(clean_seg):
+        return None, 0
+
     segment_variants = _unit_variants(clean_seg or segment)
     best_product = None
     best_score = 0
@@ -224,13 +250,11 @@ def _best_product(segment: str, products: list[dict[str, Any]]) -> tuple[dict[st
 
     # Fallback: if nothing found or low confidence, do a broad fuzzy match
     if not best_product or best_score < 70:
-        # Compute best fuzzy ratio across all product names
         for product in products:
             name = product.get("name", "")
-            # simple ratio on cleaned segment (remove numbers/size tokens)
             cleaned_seg = re.sub(r"\b\d+(?:\.\d+)?\s*(ml|l|lt|lts|litros?|litruz|litrs)\b", "", segment, flags=re.IGNORECASE)
-            cleaned_seg = cleaned_seg.strip()
-            if not cleaned_seg:
+            cleaned_seg = _DATE_FILLER_RE.sub("", cleaned_seg).strip()
+            if not cleaned_seg or _ONLY_SIZE_RE.fullmatch(cleaned_seg.strip()):
                 continue
             ratio = fuzz.ratio(cleaned_seg.lower(), name.lower())
             if ratio > best_score:
