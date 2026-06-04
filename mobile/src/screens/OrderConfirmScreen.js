@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { confirmOrder, sendMessage } from '../services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { colors as C } from '../theme';
 import { GradientScrollView } from '../components/ScreenBackground';
+
+const ACTIVE_DRAFT_ORDER_KEY = 'preventista.activeDraftOrderId';
+const PENDING_ORDER_TEXT_KEY = 'preventista.pendingOrderText';
 
 export default function OrderConfirmScreen({ route, navigation }) {
   const { order, returnToChat = false, sourceChatOrderId = null } = route.params;
@@ -13,6 +17,7 @@ export default function OrderConfirmScreen({ route, navigation }) {
     setLoading(true);
     try {
       const confirmed = await confirmOrder(order.id);
+      await AsyncStorage.multiRemove([ACTIVE_DRAFT_ORDER_KEY, PENDING_ORDER_TEXT_KEY]);
       if (returnToChat) {
         await sendMessage({
           order_id: sourceChatOrderId,

@@ -60,7 +60,35 @@ def _enrich_order(order: dict, db) -> OrderOut:
         notes=order.get("notes"),
         created_at=order.get("created_at"),
         items=items,
+        nlp_data=order.get("nlp_data"),
     )
+
+
+def _money(value) -> str:
+    try:
+        return f"Bs {float(value or 0):.2f}"
+    except (TypeError, ValueError):
+        return "Bs 0.00"
+
+
+def _draft_detail_message(order: OrderOut, *, updated: bool = False) -> str:
+    title = f"Pedido borrador #{order.id[:8]} actualizado." if updated else f"Pedido borrador #{order.id[:8]} creado."
+    lines = [
+        title,
+        f"Tienda: {order.store_name or 'Sin tienda'}",
+        f"Entrega: {order.delivery_date or 'sin fecha'}",
+        "Detalle:",
+    ]
+    for item in order.items or []:
+        lines.append(
+            f"- {item.quantity} x {item.product_name or 'Producto'} "
+            f"({_money(item.unit_price)} c/u) = {_money(item.subtotal)}"
+        )
+    lines.extend([
+        f"Total: {_money(order.total)}",
+        "Confirma para enviarlo a AJE y pasarlo a Pendiente.",
+    ])
+    return "\n".join(lines)
 
 
 @router.post("/draft", response_model=OrderOut, status_code=status.HTTP_201_CREATED)
@@ -97,14 +125,18 @@ async def create_draft(body: OrderDraftRequest, user_id: str = Depends(get_curre
         })
 
     # Create order
-    order_result = db.table("orders").insert({
+    order_payload = {
         "user_id": user_id,
         "store_id": body.store_id,
         "status": "borrador",
         "delivery_date": str(body.delivery_date),
         "total": total,
         "notes": body.notes,
-    }).execute()
+    }
+    if body.nlp_data is not None:
+        order_payload["nlp_data"] = body.nlp_data
+
+    order_result = db.table("orders").insert(order_payload).execute()
 
     if not order_result.data:
         raise HTTPException(status_code=500, detail="Error al crear el pedido")
@@ -116,15 +148,17 @@ async def create_draft(body: OrderDraftRequest, user_id: str = Depends(get_curre
         item_data["order_id"] = order["id"]
     db.table("order_items").insert(items_to_insert).execute()
 
+    enriched = _enrich_order(order, db)
+
     # Add system message to chat
     db.table("chat_messages").insert({
         "user_id": user_id,
         "order_id": order["id"],
-        "message": f"Pedido borrador creado. Total: Bs {total:.2f}. Confirma para enviarlo a AJE.",
+        "message": _draft_detail_message(enriched),
         "sender": "system",
     }).execute()
 
-    return _enrich_order(order, db)
+    return enriched
 
 
 @router.put("/{order_id}/draft", response_model=OrderOut)
@@ -175,28 +209,33 @@ async def update_draft(
         })
 
     # Update order
-    db.table("orders").update({
+    order_updates = {
         "store_id": body.store_id,
         "delivery_date": str(body.delivery_date),
         "total": total,
         "notes": body.notes or "",
-    }).eq("id", order_id).execute()
+    }
+    if body.nlp_data is not None:
+        order_updates["nlp_data"] = body.nlp_data
+
+    db.table("orders").update(order_updates).eq("id", order_id).execute()
 
     # Clear old items and insert new ones
     db.table("order_items").delete().eq("order_id", order_id).execute()
     db.table("order_items").insert(items_to_insert).execute()
 
+    updated_order = db.table("orders").select("*").eq("id", order_id).execute().data[0]
+    enriched = _enrich_order(updated_order, db)
+
     # Add system message to chat
     db.table("chat_messages").insert({
         "user_id": user_id,
         "order_id": order_id,
-        "message": f"Pedido borrador actualizado. Nuevo total: Bs {total:.2f}.",
+        "message": _draft_detail_message(enriched, updated=True),
         "sender": "system",
     }).execute()
 
-    # Get updated order
-    updated = db.table("orders").select("*").eq("id", order_id).execute()
-    return _enrich_order(updated.data[0], db)
+    return enriched
 
 
 @router.post("/{order_id}/confirm", response_model=OrderOut)

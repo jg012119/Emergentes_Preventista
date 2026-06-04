@@ -2,17 +2,20 @@
 
 import json
 import unicodedata
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.config import get_supabase_admin
-from app.models.schemas import ChatMessageCreate, ChatMessageOut
+from app.models.schemas import ChatFeedbackOut, ChatFeedbackRequest, ChatMessageCreate, ChatMessageOut
+from app.routes.nlp import draft_order_chat_reply
 from app.utils.auth import get_current_user_id
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 CHAT_ACTION_PREFIX = "@@action "
 ORDER_LIST_LIMIT = 5
+AGENT_SENDERS = {"empresa", "system", "assistant", "agent"}
 
 STATUS_LABELS = {
     "borrador": "Borrador",
@@ -235,16 +238,52 @@ def _build_chat_reply(db, user_id: str, body: ChatMessageCreate) -> str | None:
     if "estado" in text or "seguimiento" in text or "como va" in text:
         return _order_status_message(db, user_id, body.order_id)
 
-    if "pedido" in text or "pedidos" in text or "ordenes" in text or "lista" in text:
+    if "lista" in text or "ordenes" in text:
         return _list_orders_message(db, user_id, status_filter)
 
     if status_filter:
+        return _list_orders_message(db, user_id, status_filter)
+
+    active_order_id = body.order_id or (body.context or {}).get("active_order_id")
+    nlp_reply = draft_order_chat_reply(
+        db,
+        text=body.message,
+        user_id=user_id,
+        requested_store_id=None,
+        active_order_id=active_order_id,
+        context=body.context,
+    )
+    if nlp_reply:
+        return nlp_reply
+
+    if "pedido" in text or "pedidos" in text:
         return _list_orders_message(db, user_id, status_filter)
 
     return (
         "Puedo ayudarte con: menu de productos, estado del pedido, lista de pedidos, "
         "pedidos pendientes, confirmados, rechazados, en proceso o pagados."
     )
+
+
+def _attach_feedback(db, user_id: str, messages: list[dict]) -> list[dict]:
+    message_ids = {message.get("id") for message in messages if message.get("id")}
+    if not message_ids:
+        return messages
+
+    try:
+        feedback_rows = db.table("agent_feedback").select("message_id, rating").eq("user_id", user_id).execute().data or []
+    except Exception:
+        feedback_rows = []
+
+    ratings = {
+        row.get("message_id"): row.get("rating")
+        for row in feedback_rows
+        if row.get("message_id") in message_ids
+    }
+    return [
+        {**message, "feedback_rating": ratings.get(message.get("id"))}
+        for message in messages
+    ]
 
 
 @router.post("/message", response_model=ChatMessageOut, status_code=201)
@@ -283,11 +322,70 @@ async def get_general_chat(user_id: str = Depends(get_current_user_id)):
         .execute()
     )
     general_messages = [m for m in result.data if m.get("order_id") is None]
-    return [ChatMessageOut(**m) for m in general_messages[-100:]]
+    return [ChatMessageOut(**m) for m in _attach_feedback(db, user_id, general_messages[-100:])]
+
+
+@router.post("/messages/{message_id}/feedback", response_model=ChatFeedbackOut, status_code=201)
+async def rate_agent_message(
+    message_id: str,
+    body: ChatFeedbackRequest,
+    user_id: str = Depends(get_current_user_id),
+):
+    db = get_supabase_admin()
+    message = (
+        db.table("chat_messages")
+        .select("*")
+        .eq("id", message_id)
+        .eq("user_id", user_id)
+        .execute()
+        .data
+    )
+    if not message:
+        raise HTTPException(status_code=404, detail="Mensaje no encontrado")
+
+    message_row = message[0]
+    if str(message_row.get("sender") or "").lower() not in AGENT_SENDERS:
+        raise HTTPException(status_code=400, detail="Solo se puede calificar respuestas del agente")
+
+    payload = {
+        "user_id": user_id,
+        "message_id": message_id,
+        "order_id": message_row.get("order_id"),
+        "rating": body.rating,
+        "comment": body.comment,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "context": {
+            **(body.context or {}),
+            "message": message_row.get("message"),
+            "sender": message_row.get("sender"),
+        },
+    }
+
+    existing = (
+        db.table("agent_feedback")
+        .select("id")
+        .eq("user_id", user_id)
+        .eq("message_id", message_id)
+        .execute()
+        .data
+    )
+    if existing:
+        result = (
+            db.table("agent_feedback")
+            .update(payload)
+            .eq("id", existing[0]["id"])
+            .execute()
+        )
+    else:
+        result = db.table("agent_feedback").insert(payload).execute()
+
+    if not result.data:
+        raise HTTPException(status_code=500, detail="No se pudo guardar el feedback")
+    return ChatFeedbackOut(**result.data[0])
 
 
 @router.get("/{order_id}", response_model=list[ChatMessageOut])
-async def get_chat(order_id: str, _user_id: str = Depends(get_current_user_id)):
+async def get_chat(order_id: str, user_id: str = Depends(get_current_user_id)):
     db = get_supabase_admin()
     result = (
         db.table("chat_messages")
@@ -296,7 +394,7 @@ async def get_chat(order_id: str, _user_id: str = Depends(get_current_user_id)):
         .order("created_at")
         .execute()
     )
-    return [ChatMessageOut(**m) for m in result.data]
+    return [ChatMessageOut(**m) for m in _attach_feedback(db, user_id, result.data)]
 
 
 @router.get("/user/all", response_model=list[ChatMessageOut])
@@ -310,4 +408,4 @@ async def get_user_chats(user_id: str = Depends(get_current_user_id)):
         .limit(100)
         .execute()
     )
-    return [ChatMessageOut(**m) for m in result.data]
+    return [ChatMessageOut(**m) for m in _attach_feedback(db, user_id, result.data)]

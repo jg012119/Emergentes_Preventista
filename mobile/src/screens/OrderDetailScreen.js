@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getOrder, confirmOrder } from '../services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { colors as C, statusColors } from '../theme';
 import { GradientScreen, GradientScrollView } from '../components/ScreenBackground';
+
+const ACTIVE_DRAFT_ORDER_KEY = 'preventista.activeDraftOrderId';
+const PENDING_ORDER_TEXT_KEY = 'preventista.pendingOrderText';
 
 export default function OrderDetailScreen({ route, navigation }) {
   const { orderId } = route.params;
@@ -28,6 +32,7 @@ export default function OrderDetailScreen({ route, navigation }) {
             setSubmitting(true);
             try {
               const confirmed = await confirmOrder(orderId);
+              await AsyncStorage.multiRemove([ACTIVE_DRAFT_ORDER_KEY, PENDING_ORDER_TEXT_KEY]);
               setOrder(confirmed);
               Alert.alert('Pedido enviado', 'Tu pedido fue enviado correctamente a AJE.');
             } catch (e) {

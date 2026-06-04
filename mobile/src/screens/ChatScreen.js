@@ -12,10 +12,11 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeModulesProxy } from 'expo-modules-core';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { confirmOrder, getChat, getGeneralChat, parseOrderText, sendMessage } from '../services/api';
+import { confirmOrder, getChat, getGeneralChat, rateChatMessage, sendMessage } from '../services/api';
 import { colors as C } from '../theme';
 import { GradientScreen } from '../components/ScreenBackground';
 
@@ -59,15 +60,6 @@ const formatTime = (dateStr) => {
   }
 };
 
-const buildInterpretationMessage = (parsed) => {
-  if (parsed?.message) return parsed.message;
-  if (!parsed?.products?.length) {
-    return 'No pude identificar productos en el audio. Intenta decir cantidad y producto.';
-  }
-  const lines = parsed.products.map((item) => `- ${item.quantity} x ${item.name}: Bs ${Number(item.subtotal).toFixed(2)}`);
-  return `Pedido interpretado:\n${lines.join('\n')}\nTotal estimado: Bs ${Number(parsed.total || 0).toFixed(2)}`;
-};
-
 const GENERAL_SUGGESTIONS = [
   'Menu',
   'Lista de pedidos',
@@ -85,6 +77,13 @@ const ORDER_SUGGESTIONS = [
 ];
 
 const CHAT_ACTION_PREFIX = '@@action ';
+const ACTIVE_DRAFT_ORDER_KEY = 'preventista.activeDraftOrderId';
+const PENDING_ORDER_TEXT_KEY = 'preventista.pendingOrderText';
+
+const ORDER_CONTEXT_RE = /\b(big|cielo|agua|volt|oro|pulp|cifrut|cola|lata|caja|litro|litros|ml|manana|mañana|hoy|tienda|cliente|un|una|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|\d+)\b/i;
+const NON_ORDER_RE = /^(menu|catalogo|catálogo|lista|lista de pedidos|pedidos|estado|seguimiento)$/i;
+const FRESH_ORDER_RE = /^\s*(quiero|necesito|dame|manda|mandame|mándame|mandale|mándale|pedido|orden)\b/i;
+const CONTEXT_APPEND_RE = /^\s*(tambien|también|ademas|además|y|sumale|súmale|agrega|agregale|agrégale|agregame|agrégame|para|pa|de)\b/i;
 
 const parseMessageParts = (message) => {
   const actions = [];
@@ -107,9 +106,52 @@ const parseMessageParts = (message) => {
   return { text: visibleLines.join('\n').trim(), actions };
 };
 
+const findActiveDraftOrderId = (messages) => {
+  let activeId = null;
+  (messages || []).forEach((message) => {
+    const parsed = parseMessageParts(message.message);
+    parsed.actions.forEach((action) => {
+      if (action.type === 'confirm_order' && action.order_id) {
+        activeId = action.order_id;
+      }
+    });
+
+    const text = String(message.message || '').toLowerCase();
+    if (
+      activeId
+      && (text.includes('confirmado y enviado') || text.includes('estado: pendiente'))
+    ) {
+      activeId = null;
+    }
+  });
+  return activeId;
+};
+
+const shouldKeepPendingOrderText = (message) => {
+  const clean = String(message || '').trim();
+  if (!clean || NON_ORDER_RE.test(clean)) return false;
+  return ORDER_CONTEXT_RE.test(clean);
+};
+
+const shouldClearPendingBeforeSend = (message) => {
+  const clean = String(message || '').trim();
+  if (!clean) return false;
+  if (NON_ORDER_RE.test(clean)) return true;
+  return FRESH_ORDER_RE.test(clean) && !CONTEXT_APPEND_RE.test(clean);
+};
+
+const mergePendingOrderText = (previous, current) => {
+  const before = String(previous || '').trim();
+  const next = String(current || '').trim();
+  if (!before) return next;
+  if (!next) return before;
+  return `${before} ${next}`;
+};
+
 const getChatActionIcon = (type) => {
   if (type === 'order') return 'receipt-outline';
   if (type === 'orders') return 'list-outline';
+  if (type === 'confirm_order') return 'checkmark-circle-outline';
   return 'chatbubble-ellipses-outline';
 };
 
@@ -130,6 +172,9 @@ export default function ChatScreen({ route, navigation }) {
   const [recognizing, setRecognizing] = useState(false);
   const [voiceHint, setVoiceHint] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [feedbackPending, setFeedbackPending] = useState({});
+  const [activeDraftOrderId, setActiveDraftOrderId] = useState(null);
+  const [pendingOrderText, setPendingOrderText] = useState('');
   const listRef = useRef(null);
   const speechModuleRef = useRef(null);
   const lastTranscriptRef = useRef('');
@@ -145,11 +190,47 @@ export default function ChatScreen({ route, navigation }) {
     }, 50);
   }, []);
 
+  const persistActiveDraftOrderId = useCallback((nextOrderId) => {
+    setActiveDraftOrderId(nextOrderId || null);
+    if (nextOrderId) {
+      AsyncStorage.setItem(ACTIVE_DRAFT_ORDER_KEY, String(nextOrderId)).catch(() => {});
+    } else {
+      AsyncStorage.removeItem(ACTIVE_DRAFT_ORDER_KEY).catch(() => {});
+    }
+  }, []);
+
+  const persistPendingOrderText = useCallback((nextText) => {
+    const clean = String(nextText || '').trim();
+    setPendingOrderText(clean);
+    if (clean) {
+      AsyncStorage.setItem(PENDING_ORDER_TEXT_KEY, clean).catch(() => {});
+    } else {
+      AsyncStorage.removeItem(PENDING_ORDER_TEXT_KEY).catch(() => {});
+    }
+  }, []);
+
   const load = useCallback(() => {
     const request = isOrderChat ? getChat(orderId) : getGeneralChat();
     request
       .then((data) => {
         const nextMsgs = Array.isArray(data) ? data : [];
+        if (!isOrderChat) {
+          const nextActiveDraftOrderId = findActiveDraftOrderId(nextMsgs);
+          if (nextActiveDraftOrderId !== activeDraftOrderId) {
+            persistActiveDraftOrderId(nextActiveDraftOrderId);
+          }
+          if (nextActiveDraftOrderId && pendingOrderText) {
+            persistPendingOrderText('');
+          } else if (!nextActiveDraftOrderId && pendingOrderText) {
+            const hasConfirmedDraft = nextMsgs.some((message) => {
+              const lower = String(message.message || '').toLowerCase();
+              return lower.includes('confirmado y enviado') || lower.includes('estado: pendiente');
+            });
+            if (hasConfirmedDraft) {
+              persistPendingOrderText('');
+            }
+          }
+        }
         setMessages((prev) => {
           if (nextMsgs.length > prev.length) {
             scrollToBottom();
@@ -161,15 +242,45 @@ export default function ChatScreen({ route, navigation }) {
       .catch(() => {
         setErrorMessage('No se pudo actualizar el chat. Revisa la conexion.');
       });
-  }, [isOrderChat, orderId, scrollToBottom]);
+  }, [
+    activeDraftOrderId,
+    isOrderChat,
+    orderId,
+    pendingOrderText,
+    persistActiveDraftOrderId,
+    persistPendingOrderText,
+    scrollToBottom,
+  ]);
 
-  const sendTextMessage = useCallback(async (rawText, options = {}) => {
+  useEffect(() => {
+    if (isOrderChat) return;
+    AsyncStorage.multiGet([ACTIVE_DRAFT_ORDER_KEY, PENDING_ORDER_TEXT_KEY])
+      .then((entries) => {
+        const values = Object.fromEntries(entries || []);
+        if (values[ACTIVE_DRAFT_ORDER_KEY]) {
+          setActiveDraftOrderId(values[ACTIVE_DRAFT_ORDER_KEY]);
+        }
+        if (values[PENDING_ORDER_TEXT_KEY]) {
+          setPendingOrderText(values[PENDING_ORDER_TEXT_KEY]);
+        }
+      })
+      .catch(() => {});
+  }, [isOrderChat]);
+
+  const sendTextMessage = useCallback(async (rawText) => {
     const clean = String(rawText || '').trim();
     if (!clean || sending) return;
+    const transportOrderId = isOrderChat ? orderId : null;
+    const clearPendingContext = !isOrderChat && shouldClearPendingBeforeSend(clean);
+    const contextPendingOrderText = clearPendingContext ? '' : pendingOrderText;
+    const messageContext = isOrderChat ? null : {
+      active_order_id: activeDraftOrderId,
+      pending_order_text: contextPendingOrderText || null,
+    };
 
     const optimistic = {
       id: `local-${Date.now()}`,
-      order_id: orderId,
+      order_id: transportOrderId,
       sender: 'user',
       message: clean,
       created_at: new Date().toISOString(),
@@ -182,19 +293,22 @@ export default function ChatScreen({ route, navigation }) {
     scrollToBottom();
 
     try {
-      const saved = await sendMessage({ order_id: orderId, message: clean, sender: 'user' });
-      setMessages((prev) => prev.map((m) => (m.id === optimistic.id ? saved : m)));
-
-      if (options.interpret) {
-        try {
-          const parsed = await parseOrderText(clean);
-          const interpretation = buildInterpretationMessage(parsed);
-          const systemMessage = await sendMessage({ order_id: orderId, message: interpretation, sender: 'system' });
-          setMessages((prev) => [...prev, systemMessage]);
-        } catch (e) {
-          setErrorMessage('El mensaje se envio, pero no pude interpretar el pedido por voz.');
+      if (!isOrderChat) {
+        if (clearPendingContext) {
+          persistPendingOrderText('');
+        }
+        if (!activeDraftOrderId && shouldKeepPendingOrderText(clean)) {
+          persistPendingOrderText(mergePendingOrderText(contextPendingOrderText, clean));
         }
       }
+
+      const saved = await sendMessage({
+        order_id: transportOrderId,
+        message: clean,
+        sender: 'user',
+        context: messageContext,
+      });
+      setMessages((prev) => prev.map((m) => (m.id === optimistic.id ? saved : m)));
 
       load();
     } catch (e) {
@@ -204,7 +318,16 @@ export default function ChatScreen({ route, navigation }) {
       setSending(false);
       scrollToBottom();
     }
-  }, [load, orderId, scrollToBottom, sending]);
+  }, [
+    activeDraftOrderId,
+    isOrderChat,
+    load,
+    orderId,
+    pendingOrderText,
+    persistPendingOrderText,
+    scrollToBottom,
+    sending,
+  ]);
 
   useEffect(() => {
     load();
@@ -305,6 +428,41 @@ export default function ChatScreen({ route, navigation }) {
       openOrderDetail(action.order_id);
       return;
     }
+    if (action.type === 'confirm_order') {
+      Alert.alert(
+        'Confirmar pedido',
+        'El pedido pasara a Pendiente y sera enviado a AJE.',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          {
+            text: 'Confirmar',
+            onPress: async () => {
+              try {
+                const confirmed = await confirmOrder(action.order_id);
+                if (orderId === action.order_id) {
+                  setOrderStatus('pendiente');
+                }
+                if (!isOrderChat && activeDraftOrderId === action.order_id) {
+                  persistActiveDraftOrderId(null);
+                  persistPendingOrderText('');
+                }
+                const confirmationMessage = `Pedido #${String(confirmed.id).slice(0, 8)} confirmado y enviado a AJE. Estado: Pendiente.`;
+                const saved = await sendMessage({
+                  order_id: isOrderChat ? orderId : null,
+                  message: confirmationMessage,
+                  sender: 'system',
+                });
+                setMessages((prev) => [...prev, saved]);
+                load();
+              } catch (e) {
+                Alert.alert('Error', e?.message || 'No se pudo confirmar el pedido.');
+              }
+            },
+          },
+        ]
+      );
+      return;
+    }
     if (action.type === 'orders') {
       openOrdersList(action.status);
       return;
@@ -312,7 +470,45 @@ export default function ChatScreen({ route, navigation }) {
     if (action.type === 'message') {
       sendTextMessage(action.message || action.label);
     }
-  }, [openOrderDetail, openOrdersList, sendTextMessage]);
+  }, [
+    activeDraftOrderId,
+    isOrderChat,
+    load,
+    openOrderDetail,
+    openOrdersList,
+    orderId,
+    persistActiveDraftOrderId,
+    persistPendingOrderText,
+    sendTextMessage,
+  ]);
+
+  const handleFeedback = useCallback(async (message, rating) => {
+    if (!message?.id || String(message.id).startsWith('intro-') || String(message.id).startsWith('local-')) return;
+    const key = `${message.id}:${rating}`;
+    if (feedbackPending[key]) return;
+
+    setFeedbackPending((prev) => ({ ...prev, [key]: true }));
+    try {
+      const feedback = await rateChatMessage(message.id, {
+        rating,
+        context: {
+          order_id: message.order_id || orderId,
+          screen: isOrderChat ? 'order_chat' : 'general_chat',
+        },
+      });
+      setMessages((prev) => prev.map((item) => (
+        item.id === message.id ? { ...item, feedback_rating: feedback.rating } : item
+      )));
+    } catch (e) {
+      setErrorMessage('No se pudo guardar tu evaluacion de la respuesta.');
+    } finally {
+      setFeedbackPending((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    }
+  }, [feedbackPending, isOrderChat, orderId]);
 
   const handleSend = () => {
     sendTextMessage(text);
@@ -332,6 +528,8 @@ export default function ChatScreen({ route, navigation }) {
             try {
               await confirmOrder(orderId);
               setOrderStatus('pendiente');
+              persistActiveDraftOrderId(null);
+              persistPendingOrderText('');
               load();
             } catch (e) {
               Alert.alert('Error', e?.message || 'No se pudo enviar el pedido. Intenta de nuevo.');
@@ -488,6 +686,7 @@ export default function ChatScreen({ route, navigation }) {
           contentContainerStyle={s.listContent}
           renderItem={({ item }) => {
             const isUser = item.sender === 'user';
+            const canRate = !isUser && !item.failed && !String(item.id).startsWith('intro-') && !String(item.id).startsWith('local-');
             const parsed = parseMessageParts(item.message);
             return (
               <View style={[s.bubble, isUser ? s.userBubble : s.agentBubble, item.failed && s.failedBubble]}>
@@ -511,6 +710,27 @@ export default function ChatScreen({ route, navigation }) {
                             {meta ? <Text style={s.messageActionMeta}>{meta}</Text> : null}
                           </View>
                           <Ionicons name="chevron-forward" size={16} color={C.muted} />
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                ) : null}
+                {canRate ? (
+                  <View style={s.feedbackRow}>
+                    {['like', 'dislike'].map((rating) => {
+                      const active = item.feedback_rating === rating;
+                      const icon = rating === 'like'
+                        ? (active ? 'thumbs-up' : 'thumbs-up-outline')
+                        : (active ? 'thumbs-down' : 'thumbs-down-outline');
+                      return (
+                        <TouchableOpacity
+                          key={rating}
+                          activeOpacity={0.8}
+                          style={[s.feedbackButton, active && s.feedbackButtonActive]}
+                          onPress={() => handleFeedback(item, rating)}
+                          disabled={Boolean(feedbackPending[`${item.id}:${rating}`])}
+                        >
+                          <Ionicons name={icon} size={14} color={active ? C.white : C.muted} />
                         </TouchableOpacity>
                       );
                     })}
@@ -735,6 +955,27 @@ const s = StyleSheet.create({
   messageActionCopy: { flex: 1, minWidth: 0 },
   messageActionTitle: { color: C.text, fontSize: 12, fontWeight: '800' },
   messageActionMeta: { color: C.muted, fontSize: 11, marginTop: 2 },
+  feedbackRow: {
+    marginTop: 8,
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  feedbackButton: {
+    width: 30,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 1,
+    borderColor: C.border,
+    backgroundColor: 'rgba(22,16,48,0.66)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  feedbackButtonActive: {
+    borderColor: C.accent,
+    backgroundColor: C.accent,
+  },
   metaRow: {
     marginTop: 4,
     alignSelf: 'flex-end',

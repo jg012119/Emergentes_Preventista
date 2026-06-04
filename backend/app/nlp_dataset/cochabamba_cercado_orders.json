@@ -1,0 +1,620 @@
+[
+  {
+    "id": "cbba-001",
+    "text": "Dame 4 Big Cola de 2 litros y 2 Cielo chicas para mañana.",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Big Cola 2L", "presentation": "2L", "quantity": 4},
+      {"product": "Agua Cielo 500ml", "presentation": "500ml", "quantity": 2}
+    ]
+  },
+  {
+    "id": "cbba-002",
+    "text": "Mandame dos big familiar pa mañana.",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Big Cola 2L", "presentation": "2L", "quantity": 2}
+    ]
+  },
+  {
+    "id": "cbba-003",
+    "text": "Pasame 3 cielitos chicos para hoy.",
+    "delivery_offset_days": 0,
+    "items": [
+      {"product": "Agua Cielo 500ml", "presentation": "500ml", "quantity": 3}
+    ]
+  },
+  {
+    "id": "cbba-004",
+    "text": "Anotame una caja de Volt para mañana.",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Volt 300ml", "presentation": "300ml", "quantity": 1, "unit": "caja"}
+    ]
+  },
+  {
+    "id": "cbba-005",
+    "text": "Llevame 6 Oro grande para viernes.",
+    "items": [
+      {"product": "Oro 2L", "presentation": "2L", "quantity": 6}
+    ]
+  },
+  {
+    "id": "cbba-006",
+    "text": "Quiero 5 Cifrut chico.",
+    "items": [
+      {"product": "Cifrut 500ml", "presentation": "500ml", "quantity": 5}
+    ]
+  },
+  {
+    "id": "cbba-007",
+    "text": "Dejame 12 Pulp litro.",
+    "items": [
+      {"product": "Pulp 1L", "presentation": "1L", "quantity": 12}
+    ]
+  },
+  {
+    "id": "cbba-008",
+    "text": "Pasame una Big de dos.",
+    "items": [
+      {"product": "Big Cola 2L", "presentation": "2L", "quantity": 1}
+    ]
+  },
+  {
+    "id": "cbba-009",
+    "text": "Despachame 3 aguas grandes.",
+    "items": [
+      {"product": "Agua Cielo 2.5L", "presentation": "2.5L", "quantity": 3}
+    ]
+  },
+  {
+    "id": "cbba-010",
+    "text": "Mandale 1 voltcito.",
+    "items": [
+      {"product": "Volt 300ml", "presentation": "300ml", "quantity": 1}
+    ]
+  },
+  {
+    "id": "cbba-011",
+    "text": "Quiero un orito.",
+    "items": [
+      {"product": "Oro 500ml", "presentation": "500ml", "quantity": 1}
+    ]
+  },
+  {
+    "id": "cbba-012",
+    "text": "Mandame dos cajas de Volt.",
+    "items": [
+      {"product": "Volt 300ml", "presentation": "300ml", "quantity": 2, "unit": "caja"}
+    ]
+  },
+  {
+    "id": "cbba-013",
+    "text": "Para la tienda Don Pepe dame 4 Big Cola 2lt, 1 Oro grande y dos Pulp chicos para pasado mañana.",
+    "delivery_offset_days": 2,
+    "items": [
+      {"product": "Big Cola 2L", "presentation": "2L", "quantity": 4},
+      {"product": "Oro 2L", "presentation": "2L", "quantity": 1},
+      {"product": "Pulp 300ml", "presentation": "300ml", "quantity": 2}
+    ]
+  },
+  {
+    "id": "cbba-014",
+    "text": "Necesito 3 Cielo personal.",
+    "items": [
+      {"product": "Agua Cielo 500ml", "presentation": "500ml", "quantity": 3}
+    ]
+  },
+  {
+    "id": "cbba-015",
+    "text": "Mandame una Big personal.",
+    "items": [
+      {"product": "Big Cola 500ml", "presentation": "500ml", "quantity": 1}
+    ]
+  },
+  {
+    "id": "cbba-016",
+    "text": "Quiero 6 cola familiar.",
+    "items": [
+      {"product": "Big Cola 2L", "presentation": "2L", "quantity": 6}
+    ]
+  },
+  {
+    "id": "cbba-017",
+    "text": "Pasame 2 Cifrut de litro.",
+    "items": [
+      {"product": "Cifrut 1L", "presentation": "1L", "quantity": 2}
+    ]
+  },
+  {
+    "id": "cbba-018",
+    "text": "Dame 4 pulpitos.",
+    "items": [
+      {"product": "Pulp 300ml", "presentation": "300ml", "quantity": 4}
+    ]
+  },
+  {
+    "id": "cbba-019",
+    "text": "Agregame 5 aguas chicas.",
+    "items": [
+      {"product": "Agua Cielo 500ml", "presentation": "500ml", "quantity": 5}
+    ]
+  },
+  {
+    "id": "cbba-020",
+    "text": "Pasame un Volt grande.",
+    "items": [
+      {"product": "Volt 500ml", "presentation": "500ml", "quantity": 1}
+    ]
+  },
+  {
+    "id": "cbba-021",
+    "text": "Dame Big Cola de 2 litros para mañana.",
+    "delivery_offset_days": 1,
+    "expected_clarification_types": ["quantity"],
+    "items": [
+      {"product": "Big Cola 2L", "presentation": "2L"}
+    ]
+  },
+  {
+    "id": "cbba-022",
+    "text": "Dame 3 para mañana.",
+    "delivery_offset_days": 1,
+    "expected_clarification_types": ["product"],
+    "items": []
+  },
+  {
+    "id": "cbba-023",
+    "text": "Dame 2 Big Cola de 2 litros.",
+    "expected_clarification_types": ["date"],
+    "items": [
+      {"product": "Big Cola 2L", "presentation": "2L", "quantity": 2}
+    ]
+  },
+  {
+    "id": "cbba-024",
+    "text": "Dame 2 Big Cola de 2 litros para mañana.",
+    "delivery_offset_days": 1,
+    "require_store": true,
+    "expected_clarification_types": ["customer"],
+    "items": [
+      {"product": "Big Cola 2L", "presentation": "2L", "quantity": 2}
+    ]
+  },
+  {
+    "id": "cbba-025",
+    "text": "Para la tienda Don Pepe necesito Cielo personal para mañana.",
+    "delivery_offset_days": 1,
+    "require_store": true,
+    "expected_clarification_types": ["quantity", "customer"],
+    "items": [
+      {"product": "Agua Cielo 500ml", "presentation": "500ml"}
+    ]
+  },
+  {
+    "id": "cbba-026",
+    "text": "Quiero para mañana.",
+    "delivery_offset_days": 1,
+    "expected_clarification_types": ["product"],
+    "items": []
+  },
+  {
+    "id": "cbba-027",
+    "text": "Mandame una caja para mañana.",
+    "delivery_offset_days": 1,
+    "expected_clarification_types": ["product"],
+    "items": []
+  },
+  {
+    "id": "cbba-028",
+    "text": "Dame Big Cola.",
+    "expected_clarification_types": ["quantity", "presentation", "date"],
+    "items": [
+      {}
+    ]
+  },
+  {
+    "id": "cbba-029",
+    "text": "Dame 4 bigg cola de 2 litrso para mañana.",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Big Cola 2L", "presentation": "2L", "quantity": 4}
+    ]
+  },
+  {
+    "id": "cbba-030",
+    "text": "Mandame 2 sielo chika pa mañana.",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Agua Cielo 500ml", "presentation": "500ml", "quantity": 2}
+    ]
+  },
+  {
+    "id": "cbba-031",
+    "text": "Pasame 1 votl lata para hoy.",
+    "delivery_offset_days": 0,
+    "items": [
+      {"product": "Volt 300ml", "presentation": "300ml", "quantity": 1, "unit": "lata"}
+    ]
+  },
+  {
+    "id": "cbba-032",
+    "text": "Agregame 3 cifru chiko para mañana.",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Cifrut 500ml", "presentation": "500ml", "quantity": 3}
+    ]
+  },
+  {
+    "id": "cbba-033",
+    "text": "Quiero 2 pulpp chiko para pasado mañana.",
+    "delivery_offset_days": 2,
+    "items": [
+      {"product": "Pulp 300ml", "presentation": "300ml", "quantity": 2}
+    ]
+  },
+  {
+    "id": "cbba-034",
+    "text": "Dame 6 oro grnade para mañana.",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Oro 2L", "presentation": "2L", "quantity": 6}
+    ]
+  },
+  {
+    "id": "cbba-035",
+    "text": "Para mañana mandame 3 big familiar y 2 cielito chico.",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Big Cola 2L", "presentation": "2L", "quantity": 3},
+      {"product": "Agua Cielo 500ml", "presentation": "500ml", "quantity": 2}
+    ]
+  },
+  {
+    "id": "cbba-036",
+    "text": "Anotame x 4 volt lata para hoy.",
+    "delivery_offset_days": 0,
+    "items": [
+      {"product": "Volt 300ml", "presentation": "300ml", "quantity": 4, "unit": "lata"}
+    ]
+  },
+  {
+    "id": "cbba-037",
+    "text": "Quiero una docena de Cielo personal para mañana.",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Agua Cielo 500ml", "presentation": "500ml", "quantity": 12}
+    ]
+  },
+  {
+    "id": "cbba-038",
+    "text": "Pasame 7 Big de tres para pasado mañana.",
+    "delivery_offset_days": 2,
+    "items": [
+      {"product": "Big Cola 3L", "presentation": "3L", "quantity": 7}
+    ]
+  },
+  {
+    "id": "cbba-039",
+    "text": "Necesito 2 pulp litro y 5 cifrut chiquito para mañana.",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Pulp 1L", "presentation": "1L", "quantity": 2},
+      {"product": "Cifrut 500ml", "presentation": "500ml", "quantity": 5}
+    ]
+  },
+  {
+    "id": "cbba-040",
+    "text": "Mandame 4 aguas grandes, 1 volt grande y 2 oritos para hoy.",
+    "delivery_offset_days": 0,
+    "items": [
+      {"product": "Agua Cielo 2.5L", "presentation": "2.5L", "quantity": 4},
+      {"product": "Volt 500ml", "presentation": "500ml", "quantity": 1},
+      {"product": "Oro 500ml", "presentation": "500ml", "quantity": 2}
+    ]
+  },
+  {
+    "id": "cbba-041",
+    "text": "Dame dos big personales pa mañana.",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Big Cola 500ml", "presentation": "500ml", "quantity": 2}
+    ]
+  },
+  {
+    "id": "cbba-042",
+    "text": "Agrega 9 cielo litro para mañana.",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Agua Cielo 1L", "presentation": "1L", "quantity": 9}
+    ]
+  },
+  {
+    "id": "cbba-043",
+    "text": "Dejame 8 cifrut de litro para pasado mañana.",
+    "delivery_offset_days": 2,
+    "items": [
+      {"product": "Cifrut 1L", "presentation": "1L", "quantity": 8}
+    ]
+  },
+  {
+    "id": "cbba-044",
+    "text": "Mañana necesito 6 big cola 500 ml y 3 oro chico.",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Big Cola 500ml", "presentation": "500ml", "quantity": 6},
+      {"product": "Oro 500ml", "presentation": "500ml", "quantity": 3}
+    ]
+  },
+  {
+    "id": "cbba-045",
+    "text": "Mandale cinco pulpitos y cuatro voltcitos para mañana.",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Pulp 300ml", "presentation": "300ml", "quantity": 5},
+      {"product": "Volt 300ml", "presentation": "300ml", "quantity": 4}
+    ]
+  },
+  {
+    "id": "cbba-046",
+    "text": "Quiero 2 bigg familiar, 2 sielo chica y 1 votl lata pa mañana.",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Big Cola 2L", "presentation": "2L", "quantity": 2},
+      {"product": "Agua Cielo 500ml", "presentation": "500ml", "quantity": 2},
+      {"product": "Volt 300ml", "presentation": "300ml", "quantity": 1, "unit": "lata"}
+    ]
+  },
+  {
+    "id": "cbba-047",
+    "text": "Pasame 3 oro grand y 2 pulpp chiko para mañana.",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Oro 2L", "presentation": "2L", "quantity": 3},
+      {"product": "Pulp 300ml", "presentation": "300ml", "quantity": 2}
+    ]
+  },
+  {
+    "id": "cbba-048",
+    "text": "Dame 2 Big Cola 2lt + 3 Cifrut litro para hoy.",
+    "delivery_offset_days": 0,
+    "items": [
+      {"product": "Big Cola 2L", "presentation": "2L", "quantity": 2},
+      {"product": "Cifrut 1L", "presentation": "1L", "quantity": 3}
+    ]
+  },
+  {
+    "id": "cbba-049",
+    "text": "Quiero Cifrut grande para mañana.",
+    "delivery_offset_days": 1,
+    "expected_clarification_types": ["quantity"],
+    "items": [
+      {"product": "Cifrut 2L", "presentation": "2L"}
+    ]
+  },
+  {
+    "id": "cbba-050",
+    "text": "Mandame 4 Cielo para mañana.",
+    "delivery_offset_days": 1,
+    "expected_clarification_types": ["presentation"],
+    "items": [
+      {"quantity": 4}
+    ]
+  },
+  {
+    "id": "cbba-051",
+    "text": "Necesito 6 mañana.",
+    "delivery_offset_days": 1,
+    "expected_clarification_types": ["product"],
+    "items": []
+  },
+  {
+    "id": "cbba-052",
+    "text": "Para mañana necesito Oro grande.",
+    "delivery_offset_days": 1,
+    "expected_clarification_types": ["quantity"],
+    "items": [
+      {"product": "Oro 2L", "presentation": "2L"}
+    ]
+  },
+  {
+    "id": "cbba-053",
+    "text": "Dame 4 Big Cola y 2 Cielo chicas.",
+    "expected_clarification_types": ["presentation", "date"],
+    "items": [
+      {"quantity": 4},
+      {"product": "Agua Cielo 500ml", "presentation": "500ml", "quantity": 2}
+    ]
+  },
+  {
+    "id": "cbba-054",
+    "text": "Quiero 1 caja de Volt y 2 caja de Volt para mañana.",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Volt 300ml", "presentation": "300ml", "quantity": 1, "unit": "caja"},
+      {"product": "Volt 300ml", "presentation": "300ml", "quantity": 2, "unit": "caja"}
+    ]
+  },
+  {
+    "id": "cbba-055",
+    "text": "Pasame 10 agua cielo grande pa mañana.",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Agua Cielo 2.5L", "presentation": "2.5L", "quantity": 10}
+    ]
+  },
+  {
+    "id": "cbba-056",
+    "text": "Mandame 11 big litro para pasado mañana.",
+    "delivery_offset_days": 2,
+    "items": [
+      {"product": "Big Cola 1L", "presentation": "1L", "quantity": 11}
+    ]
+  },
+  {
+    "id": "cbba-057",
+    "text": "Dame doce oritos para hoy.",
+    "delivery_offset_days": 0,
+    "items": [
+      {"product": "Oro 500ml", "presentation": "500ml", "quantity": 12}
+    ]
+  },
+  {
+    "id": "cbba-058",
+    "text": "Agregame 1 caja de volt, 3 big cola dos litrso y 2 cifruth chico para mañana.",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Volt 300ml", "presentation": "300ml", "quantity": 1, "unit": "caja"},
+      {"product": "Big Cola 2L", "presentation": "2L", "quantity": 3},
+      {"product": "Cifrut 500ml", "presentation": "500ml", "quantity": 2}
+    ]
+  },
+  {
+    "id": "cbba-059",
+    "text": "Para hoy 2 cielo familiar y 2 cola familiar.",
+    "delivery_offset_days": 0,
+    "items": [
+      {"product": "Agua Cielo 2.5L", "presentation": "2.5L", "quantity": 2},
+      {"product": "Big Cola 2L", "presentation": "2L", "quantity": 2}
+    ]
+  },
+  {
+    "id": "cbba-060",
+    "text": "Necesito 4 cielo 1 litro, 4 pulp litro y 4 cifrut litro para mañana.",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Agua Cielo 1L", "presentation": "1L", "quantity": 4},
+      {"product": "Pulp 1L", "presentation": "1L", "quantity": 4},
+      {"product": "Cifrut 1L", "presentation": "1L", "quantity": 4}
+    ]
+  },
+  {
+    "id": "cbba-061",
+    "text": "Dame 2 volt medio litro para mañana.",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Volt 500ml", "presentation": "500ml", "quantity": 2}
+    ]
+  },
+  {
+    "id": "cbba-062",
+    "text": "Pasame 5 big super grande para mañana.",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Big Cola 3L", "presentation": "3L", "quantity": 5}
+    ]
+  },
+  {
+    "id": "cbba-063",
+    "text": "Mandame 3 cieloo chica y 2 bol lata para mañana.",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Agua Cielo 500ml", "presentation": "500ml", "quantity": 3},
+      {"product": "Volt 300ml", "presentation": "300ml", "quantity": 2, "unit": "lata"}
+    ]
+  },
+  {
+    "id": "cbba-064",
+    "text": "Dame 2 Pulp mango chico para mañana.",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Pulp 300ml", "presentation": "300ml", "quantity": 2}
+    ]
+  },
+  {
+    "id": "cbba-065",
+    "text": "Quiero dos cajas de Volt y una Big de dos para mañana.",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Volt 300ml", "presentation": "300ml", "quantity": 2, "unit": "caja"},
+      {"product": "Big Cola 2L", "presentation": "2L", "quantity": 1}
+    ]
+  },
+  {
+    "id": "cbba-066",
+    "text": "Mandame productos para mañana.",
+    "delivery_offset_days": 1,
+    "expected_clarification_types": ["product"],
+    "items": []
+  },
+  {
+    "id": "cbba-067",
+    "text": "Necesito 3 Volt.",
+    "expected_clarification_types": ["presentation", "date"],
+    "items": [
+      {"quantity": 3}
+    ]
+  },
+  {
+    "id": "cbba-068",
+    "text": "Para la tienda Don Pepe mandame 2 big familiar y 3 cielo chika para mañana.",
+    "delivery_offset_days": 1,
+    "require_store": true,
+    "expected_clarification_types": ["customer"],
+    "items": [
+      {"product": "Big Cola 2L", "presentation": "2L", "quantity": 2},
+      {"product": "Agua Cielo 500ml", "presentation": "500ml", "quantity": 3}
+    ]
+  },
+  {
+    "id": "cbba-069",
+    "text": "Dame 4 big cola de 2 litros 2 cielo chicas 1 caja de volt para mañana.",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Big Cola 2L", "presentation": "2L", "quantity": 4},
+      {"product": "Agua Cielo 500ml", "presentation": "500ml", "quantity": 2},
+      {"product": "Volt 300ml", "presentation": "300ml", "quantity": 1, "unit": "caja"}
+    ]
+  },
+  {
+    "id": "cbba-070",
+    "text": "Para mañana 2 oro grande 3 pulp chico 4 cifrut litro.",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Oro 2L", "presentation": "2L", "quantity": 2},
+      {"product": "Pulp 300ml", "presentation": "300ml", "quantity": 3},
+      {"product": "Cifrut 1L", "presentation": "1L", "quantity": 4}
+    ]
+  },
+  {
+    "id": "cbba-071",
+    "text": "Mandame 3 cieloo chica 2 bol lata 5 bigg familiar pa mañana.",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Agua Cielo 500ml", "presentation": "500ml", "quantity": 3},
+      {"product": "Volt 300ml", "presentation": "300ml", "quantity": 2, "unit": "lata"},
+      {"product": "Big Cola 2L", "presentation": "2L", "quantity": 5}
+    ]
+  },
+  {
+    "id": "cbba-072",
+    "text": "Quiero Sprite para mañana.",
+    "delivery_offset_days": 1,
+    "expected_clarification_types": ["product"],
+    "allow_extra_items": true,
+    "expected_unresolved_items": [
+      {"raw_text": "Sprite"}
+    ],
+    "items": []
+  },
+  {
+    "id": "cbba-073",
+    "text": "Dame 4 Big Cola de 2 litros y 2 Sprite para mañana.",
+    "delivery_offset_days": 1,
+    "expected_clarification_types": ["product"],
+    "allow_extra_items": true,
+    "expected_unresolved_items": [
+      {"raw_text": "Sprite"}
+    ],
+    "items": [
+      {"product": "Big Cola 2L", "presentation": "2L", "quantity": 4}
+    ]
+  },
+  {
+    "id": "cbba-074",
+    "text": "Dame 4 para mañana.",
+    "delivery_offset_days": 1,
+    "expected_clarification_types": ["product"],
+    "items": []
+  }
+]

@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import List, Optional
-from pydantic import BaseModel, EmailStr
+from typing import Any, List, Literal, Optional
+from pydantic import BaseModel, EmailStr, Field
 
 
 # ──────────────────────────── Auth ────────────────────────────
@@ -114,6 +114,7 @@ class OrderDraftRequest(BaseModel):
     delivery_date: date
     notes: Optional[str] = None
     items: List[OrderItemCreate]
+    nlp_data: Optional[dict] = None
 
 
 class OrderItemOut(BaseModel):
@@ -154,6 +155,7 @@ class ChatMessageCreate(BaseModel):
     order_id: Optional[str] = None
     message: str
     sender: str = "user"  # user | system | empresa
+    context: Optional[dict[str, Any]] = None
 
 
 class ChatMessageOut(BaseModel):
@@ -163,6 +165,25 @@ class ChatMessageOut(BaseModel):
     message: str
     sender: str
     created_at: Optional[str] = None
+    feedback_rating: Optional[str] = None
+
+
+class ChatFeedbackRequest(BaseModel):
+    rating: Literal["like", "dislike"]
+    comment: Optional[str] = None
+    context: Optional[dict[str, Any]] = None
+
+
+class ChatFeedbackOut(BaseModel):
+    id: str
+    user_id: str
+    message_id: str
+    order_id: Optional[str] = None
+    rating: str
+    comment: Optional[str] = None
+    context: Optional[dict[str, Any]] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
 
 
 # ──────────────────────────── Notifications ────────────────────────────
@@ -198,3 +219,88 @@ class NLPParseResponse(BaseModel):
     total: float
     requires_confirmation: bool = True
     message: Optional[str] = None
+
+
+class NLPParseOrderRequest(BaseModel):
+    text: str
+    customer_id: Optional[str] = None
+    store_id: Optional[str] = None
+    user_id: Optional[str] = None
+    context: Optional[dict[str, Any]] = None
+
+
+class NLPSkuCandidate(BaseModel):
+    sku_id: Optional[str] = None
+    product_id: Optional[str] = None
+    product: Optional[str] = None
+    presentation: Optional[str] = None
+    score: float
+    stock: Optional[int] = None
+    price: Optional[float] = None
+
+
+class NLPParsedOrderItem(BaseModel):
+    raw_text: str
+    producto_detectado: Optional[str] = None
+    producto_normalizado: Optional[str] = None
+    presentacion: Optional[str] = None
+    unidad: Optional[str] = None
+    cantidad: int
+    cantidad_detectada: bool = True
+    sku_id: Optional[str] = None
+    product_id: Optional[str] = None
+    confidence: float
+    sku_candidates: List[NLPSkuCandidate] = Field(default_factory=list)
+    requires_clarification: bool = False
+    clarification_reason: Optional[str] = None
+
+
+class NLPClarificationQuestion(BaseModel):
+    type: str
+    message: str
+    item_index: Optional[int] = None
+    options: Optional[list[dict[str, Any]]] = None
+
+
+class NLPParseOrderResponse(BaseModel):
+    intent: str
+    store_id: Optional[str] = None
+    customer_id: Optional[str] = None
+    fecha_entrega: Optional[str] = None
+    items: List[NLPParsedOrderItem]
+    requires_clarification: bool
+    clarification_questions: List[NLPClarificationQuestion] = Field(default_factory=list)
+    validation_status: str
+    confidence_score: float
+    interaction_id: Optional[str] = None
+    message: Optional[str] = None
+
+
+class NLPDraftOrderResponse(NLPParseOrderResponse):
+    draft_created: bool = False
+    order: Optional[OrderOut] = None
+
+
+class NLPValidateExtractionRequest(BaseModel):
+    store_id: Optional[str] = None
+    delivery_date: Optional[date] = None
+    items: List[OrderItemCreate]
+
+
+class NLPValidationIssue(BaseModel):
+    type: str
+    message: str
+    product_id: Optional[str] = None
+
+
+class NLPValidationResponse(BaseModel):
+    validation_status: str
+    requires_clarification: bool
+    issues: List[NLPValidationIssue] = Field(default_factory=list)
+
+
+class NLPCorrectionRequest(BaseModel):
+    interaction_id: str
+    original_extraction: dict[str, Any]
+    corrected_extraction: dict[str, Any]
+    correction_reason: Optional[str] = None
