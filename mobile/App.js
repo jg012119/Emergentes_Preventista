@@ -6,7 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { setToken } from './src/services/api';
+import { setToken, setOnUnauthorized } from './src/services/api';
 
 // Auth Screens
 import LoginScreen from './src/screens/LoginScreen';
@@ -100,6 +100,10 @@ export default function App() {
     setToken(null);
     setUserToken(null);
   };
+
+  useEffect(() => {
+    setOnUnauthorized(handleLogout);
+  }, []);
 
   if (isLoading) return null;
 

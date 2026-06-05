@@ -21,7 +21,7 @@ function Start-Component {
 
 # 1️⃣ Backend (FastAPI)
 $backendDir = Join-Path $PSScriptRoot "backend"
-$activateCmd = "& `"$backendDir\venv\Scripts\Activate.ps1`"; uvicorn app.main:app --reload"
+$activateCmd = "& `"$backendDir\venv\Scripts\Activate.ps1`"; uvicorn app.main:app --host 0.0.0.0 --reload"
 Start-Component -Title "Backend (FastAPI)" -WorkingDir $backendDir -Command $activateCmd
 
 # 2️⃣ Web Panel (Vite + React)

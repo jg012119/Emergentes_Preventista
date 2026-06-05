@@ -1,6 +1,7 @@
 """Chat message routes."""
 
 import json
+import re
 import unicodedata
 from datetime import datetime, timezone
 
@@ -94,6 +95,32 @@ def _normalize_text(value: str | None) -> str:
     text = unicodedata.normalize("NFKD", value or "")
     text = "".join(ch for ch in text if not unicodedata.combining(ch))
     return " ".join(text.lower().replace("_", " ").split())
+
+
+# Patterns like "no quiero cocas, solo agua" - extract the 'solo X' part
+_NEGATION_REDIRECT_RE = re.compile(
+    r"\bsolo\s+(.+?)(?:\s*(?:porfavor|por\s+favor|please|gracias|porf))?\s*$",
+    re.IGNORECASE,
+)
+_PURE_NEGATION_NORMALIZED = {
+    "no", "no gracias", "no por ahora", "no quiero nada",
+    "ninguno", "nada", "no nada", "no quiero", "no necesito",
+}
+
+
+def _get_redirect_text(message: str | None) -> str | None:
+    """If the message starts with a negation and then has 'solo X', return 'X'."""
+    if not message:
+        return None
+    text = _normalize_text(message)
+    # Pure negation without a redirect
+    if text in _PURE_NEGATION_NORMALIZED:
+        return None
+    # Check for combined pattern: starts with negation and contains 'solo X'
+    m = _NEGATION_REDIRECT_RE.search(message)
+    if m and any(neg in text.split() for neg in ("no", "sin", "mejor")):
+        return m.group(1).strip()
+    return None
 
 
 def _is_structured_order_message(message: str | None) -> bool:
@@ -232,6 +259,38 @@ def _build_chat_reply(db, user_id: str, body: ChatMessageCreate) -> str | None:
     text = _normalize_text(body.message)
     status_filter = _find_status_filter(text)
 
+    # Words that confirm the order or signal finishing
+    _CONFIRMATION_WORDS = {
+        "si", "sí", "ok", "okay", "dale", "confirmar", "pagar", "acabar", "listo", "terminar", "finalizar", "confirmo",
+    }
+    if text in _PURE_NEGATION_NORMALIZED:
+        return "Entendido, sin problema. Avisame cuando necesites algo."
+    # Confirmation words (e.g., pagar, acabar) should finalize the order
+    if any(word in text.split() for word in _CONFIRMATION_WORDS):
+        # Try to fetch the active order details
+        active_order_id = body.order_id or (body.context or {}).get("active_order_id")
+        if active_order_id:
+            # Retrieve the order
+            order_res = db.table("orders").select("*").eq("id", active_order_id).eq("user_id", user_id).execute()
+            if order_res.data:
+                order = order_res.data[0]
+                # Retrieve order items
+                items = db.table("order_items").select("*").eq("order_id", order["id"]).execute().data or []
+                if items:
+                    lines = ["Pedido finalizado con los siguientes productos:"]
+                    for item in items:
+                        qty = item.get("quantity") or 1
+                        # Get product name if available
+                        product_name = item.get("product_name")
+                        if not product_name:
+                            # fallback to product id lookup
+                            prod = db.table("products").select("name").eq("id", item.get("product_id")).execute().data
+                            product_name = prod[0]["name"] if prod else str(item.get("product_id"))
+                        lines.append(f"- {qty} x {product_name}")
+                    return "\n".join(lines)
+        # Default fallback when no active order or no items
+        return "Pedido finalizado. Gracias por tu compra."
+
     if "menu" in text or "catalogo" in text or "productos" in text:
         return _build_product_menu(db, user_id)
 
@@ -244,7 +303,24 @@ def _build_chat_reply(db, user_id: str, body: ChatMessageCreate) -> str | None:
     if status_filter:
         return _list_orders_message(db, user_id, status_filter)
 
+    # Handle "no quiero X, solo Y" → redirect to "Y" as the new request
+    redirect_text = _get_redirect_text(body.message)
+    if redirect_text:
+        # Build NLP reply with just the redirected product text
+        active_order_id = body.order_id or (body.context or {}).get("active_order_id")
+        nlp_reply = draft_order_chat_reply(
+            db,
+            text=redirect_text,
+            user_id=user_id,
+            requested_store_id=None,
+            active_order_id=active_order_id,
+            context=body.context,
+        )
+        if nlp_reply:
+            return nlp_reply
+
     active_order_id = body.order_id or (body.context or {}).get("active_order_id")
+    # In caso de que el usuario aún no haya especificado un pedido, sigue el flujo normal
     nlp_reply = draft_order_chat_reply(
         db,
         text=body.message,

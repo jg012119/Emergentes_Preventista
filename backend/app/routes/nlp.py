@@ -33,6 +33,14 @@ from app.utils.auth import get_current_user_id
 
 router = APIRouter(prefix="/nlp", tags=["nlp"])
 
+SOLID_KEYWORDS = {
+    "papas", "papitas", "papas fritas", "nachos", "galletas", "dulce", "hamburguesa",
+    "pizza", "sandwich", "bocadillo", "comida", "alimento", "snack", "papas chips"
+}
+ALCOHOL_KEYWORDS = {
+    "cheba", "cerveza", "birra", "chela", "vino", "whisky", "ron", "vodka", "licor"
+}
+
 AUTO_ACCEPT_SCORE = 90
 CONFIRM_SCORE = 70
 AMBIGUOUS_GAP = 5
@@ -44,6 +52,19 @@ CONTEXTUAL_REPLY_RE = re.compile(
 )
 CONTEXT_APPEND_RE = re.compile(
     r"^\s*(tambien|también|ademas|además|y|sumale|agrega|agregale|agregame)\b",
+    re.IGNORECASE,
+)
+# Negation patterns: "no quiero X, solo Y", "sin X", "mejor solo Y"
+NEGATION_RE = re.compile(
+    r"^\s*(?:no\s+(?:quiero|me\s+pongas|pongas|mandes?|quiero|necesito)|sin\s+|mejor\s+(?:solo|sin)\s+|solo\s+)",
+    re.IGNORECASE,
+)
+NEGATION_PREFIX_RE = re.compile(
+    r"^\s*(?:no\s+(?:quiero|me\s+pongas|pongas|mandes?)|sin\s+(?:coca|cola|agua|volt|big|cielo|pulp|cifrut)\b)",
+    re.IGNORECASE,
+)
+SOLO_PATTERN_RE = re.compile(
+    r"\bsolo\s+(.+?)(?:\s*(?:porf(?:avor)?|please|por\s+favor|gracias))?\s*$",
     re.IGNORECASE,
 )
 COMMAND_TEXTS = {"menu", "catalogo", "productos", "lista", "lista de pedidos", "estado"}
@@ -736,6 +757,24 @@ def _validation_for_items(items: list[NLPParsedOrderItem], delivery_date: str | 
     invalid = False
 
     for index, item in enumerate(items):
+        if item.clarification_reason == "solid_food":
+            questions.append(NLPClarificationQuestion(
+                type="product",
+                item_index=index,
+                message=f"❌ *{item.producto_detectado or item.raw_text}* – Lamento informarte que no contamos con eso, ya que nos especializamos exclusivamente en el abastecimiento de productos líquidos y bebidas.",
+            ))
+            invalid = True
+            continue
+
+        if item.clarification_reason == "alcohol":
+            questions.append(NLPClarificationQuestion(
+                type="product",
+                item_index=index,
+                message=f"❌ *{item.producto_detectado or item.raw_text}* – Lamento informarte que no distribuimos bebidas alcohólicas.",
+            ))
+            invalid = True
+            continue
+
         if not item.sku_candidates:
             questions.append(NLPClarificationQuestion(
                 type="product",
@@ -821,20 +860,162 @@ def _validation_for_items(items: list[NLPParsedOrderItem], delivery_date: str | 
     return "valid", questions
 
 
+
+# Variant keywords that indicate a specific variety the user requested
+_VARIANT_KEYWORDS = {
+    "light", "zero", "sin azucar", "sin gas", "con gas", "naranja", "limon",
+    "fresa", "mango", "tropical", "original", "clasica", "clasico",
+}
+
+# Non-beverage keywords that appear commonly in Bolivia
+_NON_BEVERAGE_KEYWORDS = {
+    "papa", "papas", "papita", "papitas", "nachos", "galleta", "galletas",
+    "dulce", "dulces", "hamburguesa", "pizza", "sandwich", "bocadillo",
+    "comida", "alimento", "snack", "chips", "popcorn", "canchita",
+    "arroz", "fideo", "pan", "leche", "queso", "yogur", "yogurt",
+}
+
+
+def _requested_variant(raw_text: str) -> str | None:
+    """Return the variant keyword found in the raw text, if any."""
+    normalized = _normalize(raw_text)
+    for keyword in _VARIANT_KEYWORDS:
+        if keyword in normalized:
+            return keyword
+    return None
+
+
+def _matched_name_contains_variant(matched_name: str, variant: str) -> bool:
+    """Return True if the matched product name also contains the requested variant."""
+    return variant in _normalize(matched_name)
+
+
+def _is_non_beverage(raw_text: str) -> bool:
+    """Return True if the raw text looks like a non-beverage item."""
+    normalized = _normalize(raw_text)
+    tokens = set(normalized.split())
+    return bool(tokens & _NON_BEVERAGE_KEYWORDS)
+
+
+def _suggest_alternative(raw_text: str) -> str:
+    """Return a product-specific alternative suggestion based on the raw text."""
+    lower = raw_text.lower()
+    if "coca" in lower or "cola" in lower:
+        return "si tengo Coca-Cola Normal (2L, 1.5L, 500ml)"
+    if "agua" in lower or "cielo" in lower or "vital" in lower:
+        return "si tengo Agua Cielo y Agua Vital sin gas"
+    if "volt" in lower:
+        return "si tengo Volt de 300ml y 500ml"
+    if "big" in lower or "big cola" in lower:
+        return "si tengo Big Cola en varias presentaciones"
+    if "pulp" in lower:
+        return "si tengo Pulp Naranja y Pulp Durazno"
+    if "cifrut" in lower:
+        return "si tengo Cifrut en distintos sabores"
+    return "puedes pedir el menu para ver lo que tenemos disponible"
+
+
 def _build_message(response: NLPParseOrderResponse) -> str:
     if not response.items:
         return "No pude identificar productos. Escribe cantidad, producto y presentacion."
 
-    if response.requires_clarification and response.clarification_questions:
-        return response.clarification_questions[0].message
+    responses = []
+    has_issues = False
 
-    lines = []
-    for item in response.items:
-        name = item.producto_normalizado or item.producto_detectado or "Producto"
+    for index, item in enumerate(response.items):
+        num = f"{index + 1}."
+
+        # 1. Solid food
+        if item.clarification_reason == "solid_food" or _is_non_beverage(item.raw_text):
+            responses.append(
+                f"{num} {item.producto_detectado or item.raw_text} - "
+                "No vendemos ese producto. Somos una empresa de bebidas y solo "
+                "distribuimos productos liquidos."
+            )
+            has_issues = True
+            continue
+
+        # 2. Alcohol
+        if item.clarification_reason == "alcohol":
+            responses.append(
+                f"{num} {item.producto_detectado or item.raw_text} - "
+                "No distribuimos bebidas alcoholicas."
+            )
+            has_issues = True
+            continue
+
+        # 3. No SKU candidates found
+        if not item.sku_candidates:
+            alt = _suggest_alternative(item.raw_text)
+            responses.append(
+                f"{num} {item.raw_text} - No tengo ese producto, pero {alt}. "
+                "Deseas cambiarlo?"
+            )
+            has_issues = True
+            continue
+
+        top = item.sku_candidates[0]
+        top_score = top.score * 100
+        second = item.sku_candidates[1] if len(item.sku_candidates) > 1 else None
+
+        # 4. Low confidence match
+        if top_score < CONFIRM_SCORE:
+            alt = _suggest_alternative(item.raw_text)
+            responses.append(
+                f"{num} {item.raw_text} - No tengo ese producto exacto, pero {alt}. "
+                "Deseas cambiarlo?"
+            )
+            has_issues = True
+            continue
+
+        # 5. Variant mismatch: user asked for "Light" but matched "2L"
+        requested_variant = _requested_variant(item.raw_text)
+        matched_name = top.product or ""
+        if requested_variant and not _matched_name_contains_variant(matched_name, requested_variant):
+            alt = _suggest_alternative(item.raw_text)
+            responses.append(
+                f"{num} {item.raw_text} - No tengo esa variante, pero {alt}. "
+                "Deseas alguna de esas?"
+            )
+            has_issues = True
+            continue
+
+        # 6. Stock issue
+        if top.stock is not None and top.stock < item.cantidad:
+            responses.append(
+                f"{num} {top.product} - No tengo suficiente stock. "
+                f"Disponible: {top.stock} unidades."
+            )
+            has_issues = True
+            continue
+
+        # 7. Quantity not detected
+        if not item.cantidad_detectada:
+            responses.append(
+                f"{num} {top.product} - Cuantas unidades deseas?"
+            )
+            has_issues = True
+            continue
+
+        # 8. All good - product found and matched
+        name = item.producto_normalizado or top.product
         presentation = f" {item.presentacion}" if item.presentacion else ""
-        lines.append(f"{item.cantidad} x {name}{presentation}")
-    date_copy = f" Entrega: {response.fecha_entrega}." if response.fecha_entrega else ""
-    return f"Interprete: {', '.join(lines)}.{date_copy} Revisa el pedido antes de confirmarlo."
+        if presentation and presentation.strip().lower() in name.lower():
+            presentation = ""
+        qty = item.cantidad
+        responses.append(f"{num} {qty} x {name}{presentation} - Anotado.")
+
+    greeting = "Con gusto proceso tu pedido.\n\n"
+    items_list = "\n".join(responses)
+
+    if has_issues:
+        footer = "\n\nHay algo que quieras ajustar o agregar?"
+    else:
+        date_copy = f"Entrega: {response.fecha_entrega}. " if response.fecha_entrega else ""
+        footer = f"\n\n{date_copy}Confirmas los productos?"
+
+    return f"{greeting}{items_list}{footer}"
+
 
 
 def _action_line(payload: dict[str, Any]) -> str:
@@ -1180,7 +1361,33 @@ def _parse_order_payload(
     items: list[NLPParsedOrderItem] = []
     for segment in segments:
         clean_item = _remove_quantity(segment)
-        if not clean_item or DATE_KEYWORD_RE.fullmatch(clean_item) or not _has_product_signal(clean_item):
+        if not clean_item or DATE_KEYWORD_RE.fullmatch(clean_item):
+            continue
+
+        # Check for solid food
+        is_solid = any(word in clean_item.split() for word in SOLID_KEYWORDS)
+        # Check for alcohol
+        is_alcohol = any(word in clean_item.split() for word in ALCOHOL_KEYWORDS)
+
+        if is_solid or is_alcohol:
+            items.append(NLPParsedOrderItem(
+                raw_text=segment,
+                producto_detectado=clean_item,
+                producto_normalizado=None,
+                presentacion=None,
+                unidad=None,
+                cantidad=1,
+                cantidad_detectada=False,
+                sku_id=None,
+                product_id=None,
+                confidence=0.0,
+                sku_candidates=[],
+                requires_clarification=True,
+                clarification_reason="solid_food" if is_solid else "alcohol",
+            ))
+            continue
+
+        if not _has_product_signal(clean_item):
             continue
 
         candidates = _sku_candidates(clean_item, products, aliases)
@@ -1621,6 +1828,28 @@ def _merge_context_text(context_text: str | None, text: str) -> str | None:
     return f"{previous} {current}"
 
 
+def _is_negation_only(text: str) -> bool:
+    """Returns True if the message is a pure negation without a product request."""
+    normalized = _normalize(text)
+    # Phrases like: no, no gracias, no quiero nada, no por ahora
+    pure_negation = {"no", "no gracias", "no por ahora", "no quiero nada", "ninguno", "nada", "no nada"}
+    return normalized in pure_negation
+
+
+def _extract_solo_product(text: str) -> str | None:
+    """Extract product from 'solo X', 'solo agua porfavor', 'mejor solo agua', etc."""
+    normalized = _normalize(text)
+    # Match 'solo X' or 'mejor solo X' or 'nada mas X'
+    for prefix in ("solo ", "mejor solo ", "nada mas ", "nomás ", "nomas ", "solamente "):
+        if normalized.startswith(prefix):
+            candidate = normalized[len(prefix):].strip()
+            # Remove trailing fillers
+            for filler in (" porfavor", " por favor", " please", " gracias", " porf"):
+                candidate = candidate.removesuffix(filler)
+            return candidate.strip() if candidate else None
+    return None
+
+
 def draft_order_chat_reply(
     db,
     *,
@@ -1630,6 +1859,27 @@ def draft_order_chat_reply(
     active_order_id: str | None = None,
     context: dict[str, Any] | None = None,
 ) -> str | None:
+    # ── Handle pure negations (no, no gracias, etc.) ──────────────
+    if _is_negation_only(text):
+        return "Entendido. Si cambias de idea o quieres pedir algo, estoy aqui para ayudarte."
+
+    # ── Handle 'solo X' patterns (user correcting previous suggestion) ──
+    solo_product = _extract_solo_product(text)
+    if solo_product:
+        # Treat as a fresh product request with the extracted product
+        enriched = solo_product
+        response = _draft_order_payload(
+            db,
+            text=enriched,
+            user_id=user_id,
+            requested_store_id=requested_store_id,
+            persist=True,
+        )
+        if response.draft_created:
+            return response.message
+        if response.items or response.clarification_questions:
+            return response.message
+
     # ── Handle pending clarification replies ──────────────────────
     if _is_clarification_reply(text):
         pending = _last_pending_clarification(db, user_id=user_id)

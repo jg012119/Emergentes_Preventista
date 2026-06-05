@@ -1,12 +1,17 @@
 // mobile/src/services/api.js
 // Wrapper around the FastAPI backend for chat and order operations.
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8000";
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://192.168.100.41:8000";
 
 let authToken = null;
+let onUnauthorizedCallback = null;
 
 export function setToken(token) {
   authToken = token || null;
+}
+
+export function setOnUnauthorized(callback) {
+  onUnauthorizedCallback = callback;
 }
 
 async function request(endpoint, { method = "GET", body = null, token = null } = {}) {
@@ -34,6 +39,11 @@ async function request(endpoint, { method = "GET", body = null, token = null } =
     data = text ? { detail: text } : null;
   }
   if (!resp.ok) {
+    if (resp.status === 401 || resp.status === 403) {
+      if (onUnauthorizedCallback) {
+        onUnauthorizedCallback();
+      }
+    }
     throw new Error(data?.detail || `Request ${method} ${endpoint} failed ${resp.status}`);
   }
   return data;
