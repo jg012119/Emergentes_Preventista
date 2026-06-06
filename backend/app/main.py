@@ -1,14 +1,25 @@
 """FastAPI application entry point."""
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routes import auth, users, stores, products, orders, chat, notifications, reports, nlp
+from app.services.llm import warmup
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Run startup tasks before serving requests."""
+    await warmup()   # pre-load Ollama model into GPU/RAM
+    yield
 
 app = FastAPI(
     title="Preventista Inteligente AJE",
     description="MVP de agente inteligente para recepción y gestión de pedidos mediante lenguaje natural.",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 # CORS – allow mobile app and panel to access the API

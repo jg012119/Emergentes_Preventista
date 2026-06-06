@@ -238,10 +238,13 @@ async def update_draft(
     return enriched
 
 
-@router.post("/{order_id}/confirm", response_model=OrderOut)
-async def confirm_order(order_id: str, user_id: str = Depends(get_current_user_id)):
-    db = get_supabase_admin()
-
+def confirm_order_in_db(
+    db,
+    *,
+    order_id: str,
+    user_id: str,
+    add_chat_message: bool = True,
+) -> OrderOut:
     # Get order
     result = db.table("orders").select("*").eq("id", order_id).eq("user_id", user_id).execute()
     if not result.data:
@@ -253,6 +256,9 @@ async def confirm_order(order_id: str, user_id: str = Depends(get_current_user_i
 
     # Revalidate stock
     items = db.table("order_items").select("*").eq("order_id", order_id).execute()
+    if not items.data:
+        raise HTTPException(status_code=400, detail="No se puede confirmar un pedido sin productos")
+
     for item in items.data:
         prod = db.table("products").select("stock, name").eq("id", item["product_id"]).execute()
         if prod.data and prod.data[0]["stock"] < item["quantity"]:
@@ -264,21 +270,38 @@ async def confirm_order(order_id: str, user_id: str = Depends(get_current_user_i
     # Reduce stock
     for item in items.data:
         prod = db.table("products").select("stock").eq("id", item["product_id"]).execute()
+        if not prod.data:
+            continue
         new_stock = prod.data[0]["stock"] - item["quantity"]
         db.table("products").update({"stock": new_stock}).eq("id", item["product_id"]).execute()
 
     # Update status
-    updated = db.table("orders").update({"status": "pendiente"}).eq("id", order_id).execute()
+    updated = (
+        db.table("orders")
+        .update({"status": "pendiente"})
+        .eq("id", order_id)
+        .eq("user_id", user_id)
+        .execute()
+    )
+    if not updated.data:
+        raise HTTPException(status_code=500, detail="No se pudo confirmar el pedido")
 
     # Chat message
-    db.table("chat_messages").insert({
-        "user_id": user_id,
-        "order_id": order_id,
-        "message": "Tu pedido fue enviado correctamente a AJE y se encuentra en estado Pendiente. Te notificaremos por este chat y por correo cuando la empresa lo revise.",
-        "sender": "system",
-    }).execute()
+    if add_chat_message:
+        db.table("chat_messages").insert({
+            "user_id": user_id,
+            "order_id": order_id,
+            "message": "Tu pedido fue enviado correctamente a AJE y se encuentra en estado Pendiente. Te notificaremos por este chat y por correo cuando la empresa lo revise.",
+            "sender": "system",
+        }).execute()
 
     return _enrich_order(updated.data[0], db)
+
+
+@router.post("/{order_id}/confirm", response_model=OrderOut)
+async def confirm_order(order_id: str, user_id: str = Depends(get_current_user_id)):
+    db = get_supabase_admin()
+    return confirm_order_in_db(db, order_id=order_id, user_id=user_id)
 
 
 @router.get("/", response_model=list[OrderOut])

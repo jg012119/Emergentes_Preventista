@@ -11,6 +11,7 @@
     "android": {
       "package": "com.aje.preventista",
       "softwareKeyboardLayoutMode": "resize",
+      "usesCleartextTraffic": true,
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "RECORD_AUDIO"

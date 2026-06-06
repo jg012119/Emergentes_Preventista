@@ -304,3 +304,84 @@ class NLPCorrectionRequest(BaseModel):
     original_extraction: dict[str, Any]
     corrected_extraction: dict[str, Any]
     correction_reason: Optional[str] = None
+
+
+# ──────────────────────────── LLM Structured Output ────────────────────────────
+
+class LlamaProduct(BaseModel):
+    """Un producto detectado en el mensaje del usuario."""
+    texto_original: str = Field(description="Texto exacto que usó el usuario para referirse al producto")
+    nombre_detectado: str = Field(description="Nombre normalizado del producto detectado")
+    cantidad: int = Field(default=1, ge=1, description="Cantidad solicitada")
+    presentacion: Optional[str] = Field(
+        default=None,
+        description="Presentación detectada: 500ml, 1L, 2L, 2.5L, 3L, 300ml, o null si no se menciona",
+    )
+    sku_sugerido: Optional[str] = Field(
+        default=None,
+        description="Nombre oficial del catálogo que mejor coincide, o null",
+    )
+    requiere_aclaracion: bool = Field(
+        default=False,
+        description="True si la presentación es ambigua y hay múltiples opciones posibles",
+    )
+
+
+class LlamaIntent(BaseModel):
+    """Respuesta estructurada del LLM para el agente de pedidos AJE Bolivia."""
+
+    intencion: Literal[
+        "pedido",
+        "consulta_catalogo",
+        "estado_pedido",
+        "listar_pedidos",
+        "saludo",
+        "fuera_de_alcance",
+        "confirmacion",
+        "negacion",
+        "aclaracion",
+        "ambiguo",
+    ] = Field(description="Intención principal del mensaje")
+
+    confianza: float = Field(
+        default=1.0,
+        ge=0.0,
+        le=1.0,
+        description="Confianza del modelo en la clasificación, entre 0.0 y 1.0",
+    )
+
+    motivo_rechazo: Optional[Literal[
+        "alcohol",
+        "comida_solida",
+        "competencia",
+        "producto_inexistente",
+        "fuera_de_dominio",
+    ]] = Field(
+        default=None,
+        description="Motivo de rechazo si intencion es fuera_de_alcance",
+    )
+
+    productos: List[LlamaProduct] = Field(
+        default_factory=list,
+        description="Lista de productos detectados. Vacía si no es un pedido.",
+    )
+
+    fecha_entrega: Optional[str] = Field(
+        default=None,
+        description="Fecha de entrega en formato YYYY-MM-DD si el usuario la mencionó, null si no",
+    )
+
+    requiere_aclaracion: bool = Field(
+        default=False,
+        description="True si algún producto requiere aclaración antes de crear el borrador",
+    )
+
+    pregunta_aclaracion: Optional[str] = Field(
+        default=None,
+        description="Pregunta de aclaración para el usuario si requiere_aclaracion es True",
+    )
+
+    mensaje_libre: Optional[str] = Field(
+        default=None,
+        description="Respuesta natural para saludos, rechazos o consultas. Null para pedidos.",
+    )

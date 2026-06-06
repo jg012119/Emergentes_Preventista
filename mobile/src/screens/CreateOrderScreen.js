@@ -32,6 +32,15 @@ export default function CreateOrderScreen({ route, navigation }) {
 
   const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
 
+  const goCreateStore = () => {
+    const parent = navigation.getParent?.();
+    if (parent) {
+      parent.navigate('CreateStore');
+      return;
+    }
+    navigation.navigate('CreateStore');
+  };
+
   const buildChatRequest = (store) => {
     const lines = cart.map((item) => `- ${item.qty} x ${item.name}: Bs ${(item.price * item.qty).toFixed(2)}`);
     return [
@@ -117,12 +126,12 @@ export default function CreateOrderScreen({ route, navigation }) {
           </TouchableOpacity>
         ))}
         {stores.length === 0 ? (
-          <TouchableOpacity style={s.addStoreBtn} onPress={() => navigation.navigate('CreateStore')}>
+          <TouchableOpacity style={s.addStoreBtn} onPress={goCreateStore}>
             <Ionicons name="add-circle-outline" size={18} color={C.accent} />
             <Text style={s.addStoreBtnText}>Registrar una sucursal primero</Text>
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity style={s.addStoreLinkRow} onPress={() => navigation.navigate('CreateStore')}>
+          <TouchableOpacity style={s.addStoreLinkRow} onPress={goCreateStore}>
             <Ionicons name="add-outline" size={15} color={C.muted} />
             <Text style={s.addStoreLinkText}>Añadir otra sucursal</Text>
           </TouchableOpacity>

@@ -865,3 +865,90 @@ Este proyecto busca crear un MVP funcional de preventista inteligente para autom
 La solución propuesta permite reducir errores en pedidos, mejorar la comunicación entre cliente y empresa, controlar precios y stock, registrar tiendas con ubicación y mantener informado al cliente mediante notificaciones por chat y correo.
 
 El alcance está limitado a una solución funcional y presentable en menos de un mes, evitando módulos complejos que puedan afectar la entrega final.
+---
+
+## 32. Integración de Inteligencia Artificial Local (LLaMA + Ollama)
+
+> **Implementado en:** Junio 2026
+
+### Motivación
+
+El sistema NLP original basado en reglas fijas (`nlp.py`) tenía limitaciones ante variaciones del lenguaje boliviano no registradas, typos poco comunes y preguntas conversacionales libres. Para superarlas sin depender de APIs externas de pago, se integró **LLaMA 3.1 (8B)** corriendo localmente mediante **Ollama**.
+
+### Arquitectura híbrida
+
+```text
+Mensaje del usuario
+       ↓
+  NLP rule-based (rápido, <100ms)
+  ¿Matcheó productos en DB?
+       │
+  SÍ ──┘ → Respuesta normal (sin cambios)
+       │
+  NO ──┘ → LLM Fallback (Ollama / LLaMA)
+              ↓
+         Extrae intención + productos
+              ↓
+         Valida contra catálogo real (DB)
+              ↓
+         Respuesta al usuario
+```
+
+### Componentes agregados
+
+| Archivo | Descripción |
+|---|---|
+| `backend/app/services/llm.py` | Servicio async con warmup, retry y extracción de JSON |
+| `backend/assistant_prompt.py` | Few-shots en español boliviano + mensajes de rechazo |
+| `backend/app/routes/chat.py` | Fallback LLM en `send_message()` |
+| `backend/app/main.py` | Warmup del modelo en startup via lifespan |
+| `backend/app/routes/nlp.py` | Endpoint diagnóstico `GET /nlp/llm-status` |
+| `backend/scratch/test_llm_fallback.py` | 13 casos de prueba automatizados |
+| `backend/scratch/train_llm_model.py` | Entrenamiento con épocas via Ollama Modelfile |
+
+### Modelo personalizado (entrenamiento)
+
+El script `train_llm_model.py` genera un modelo `aje-preventista` entrenado con los ejemplos del dataset `cochabamba_cercado_orders.json`:
+
+- **3 épocas** con ejemplos crecientes (1/3 → 2/3 → 100% del dataset válido)
+- Métricas por época: intent accuracy, product hit rate, quantity accuracy
+- Selección automática del mejor epoch para el modelo final
+
+### Variables de entorno (nuevas)
+
+```env
+OLLAMA_URL=http://localhost:11434
+OLLAMA_MODEL=llama3.1:8b          # o aje-preventista tras el entrenamiento
+OLLAMA_TIMEOUT=30
+LLM_FALLBACK_ENABLED=true
+```
+
+### Instalación de Ollama
+
+```bash
+# 1. Instalar Ollama
+curl -fsSL https://ollama.com/install.sh | sh
+
+# 2. Bajar el modelo base (4.7 GB)
+ollama pull llama3.1:8b
+
+# 3. (Opcional) Entrenar el modelo personalizado AJE
+cd backend && source .venv/bin/activate
+python -m scratch.train_llm_model
+
+# 4. Verificar estado desde la API
+# GET /nlp/llm-status
+```
+
+### Stack tecnológico actualizado
+
+| Componente | Tecnología |
+|---|---|
+| App móvil | React Native (Expo) |
+| Reconocimiento de voz | @react-native-voice/voice |
+| Backend | FastAPI + Python |
+| Base de datos | Supabase (PostgreSQL) |
+| Panel web | React + Vite |
+| NLP primario | Motor rule-based + fuzzy matching (rapidfuzz) |
+| **NLP secundario (nuevo)** | **LLaMA 3.1 8B vía Ollama (fallback local, open source)** |
+| Notificaciones | Chat interno + correo electrónico |

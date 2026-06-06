@@ -16,6 +16,8 @@ GRANT ALL ON public.notifications TO service_role;
 GRANT ALL ON public.nlp_interactions TO service_role;
 GRANT ALL ON public.nlp_corrections TO service_role;
 GRANT ALL ON public.clarification_events TO service_role;
+GRANT ALL ON public.llm_logs TO service_role;
+GRANT ALL ON public.chat_session_state TO service_role;
 
 -- Otorgar permisos de lectura al anon role (para endpoints públicos)
 GRANT SELECT ON public.products TO anon;
@@ -34,6 +36,8 @@ GRANT ALL ON public.notifications TO authenticated;
 GRANT ALL ON public.nlp_interactions TO authenticated;
 GRANT ALL ON public.nlp_corrections TO authenticated;
 GRANT ALL ON public.clarification_events TO authenticated;
+GRANT ALL ON public.llm_logs TO authenticated;
+GRANT ALL ON public.chat_session_state TO authenticated;
 
 -- Deshabilitar RLS en todas las tablas (el backend maneja su propia auth con JWT)
 ALTER TABLE public.users         DISABLE ROW LEVEL SECURITY;
@@ -48,3 +52,5 @@ ALTER TABLE public.notifications DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.nlp_interactions DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.nlp_corrections DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.clarification_events DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.llm_logs DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.chat_session_state DISABLE ROW LEVEL SECURITY;

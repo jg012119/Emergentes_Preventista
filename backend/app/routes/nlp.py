@@ -144,6 +144,15 @@ COMMERCIAL_UNIT_TOKENS = {
     "paquetes",
 }
 NO_PRODUCT_SIGNAL_TOKENS = {
+    "a",
+    "mi",
+    "y",
+    "en",
+    "con",
+    "por",
+    "su",
+    "tu",
+    "o",
     "de",
     "del",
     "la",
@@ -224,6 +233,9 @@ NO_PRODUCT_SIGNAL_TOKENS = {
     "dejame",
     "llevame",
     "despachame",
+    "porfavor",
+    "favor",
+    "gracias",
 }
 TYPO_REPLACEMENTS = (
     (r"\bchika\b", "chica"),
@@ -232,6 +244,7 @@ TYPO_REPLACEMENTS = (
     (r"\bchikito\b", "chiquito"),
     (r"\bgrnade\b", "grande"),
     (r"\bgrand\b", "grande"),
+    (r"\bmaniana\b", "manana"),
     (r"\blitrso\b", "litros"),
     (r"\blitors\b", "litros"),
     (r"\blitroos\b", "litros"),
@@ -324,6 +337,23 @@ def _canonical_presentation(value: str | None) -> str | None:
 
     match = PRESENTATION_RE.search(normalized)
     if not match:
+        # Users often say "coca de 500" or "big cola de 2" without the unit.
+        # Treat numbers after "de/del" as presentation only in common bottle ranges.
+        match = re.search(r"\b(?:de|del)\s+(\d+(?:[\.,]\d+)?)\b", normalized)
+        if not match:
+            return None
+
+        raw_amount = match.group(1).replace(",", ".")
+        try:
+            number = float(raw_amount)
+        except ValueError:
+            return None
+
+        if number >= 100 and number == int(number):
+            return f"{int(number)}ml"
+        if 0 < number <= 5:
+            amount = str(int(number)) if number == int(number) else str(number).rstrip("0").rstrip(".")
+            return f"{amount}L"
         return None
 
     amount = match.group(1).replace(",", ".")
@@ -649,9 +679,13 @@ def _brand_matches(clean_item: str, product: dict[str, Any], aliases: list[dict[
 
 def _sku_candidates(clean_item: str, products: list[dict[str, Any]], aliases: list[dict[str, Any]]) -> list[NLPSkuCandidate]:
     candidates: dict[str, NLPSkuCandidate] = {}
+    requested_presentation = _canonical_presentation(clean_item)
 
     for product in products:
         if not _brand_matches(clean_item, product, aliases):
+            continue
+        product_presentation = _canonical_presentation(product.get("name"))
+        if requested_presentation and product_presentation != requested_presentation:
             continue
 
         best_score = 0.0
@@ -666,7 +700,7 @@ def _sku_candidates(clean_item: str, products: list[dict[str, Any]], aliases: li
             sku_id=product_id,
             product_id=product_id,
             product=product.get("name"),
-            presentation=_canonical_presentation(product.get("name")),
+            presentation=product_presentation,
             score=round(best_score / 100, 2),
             stock=int(product.get("stock") or 0),
             price=float(product.get("price") or 0),
@@ -677,6 +711,8 @@ def _sku_candidates(clean_item: str, products: list[dict[str, Any]], aliases: li
 
 def _extract_delivery_date(text: str) -> str | None:
     normalized = _normalize(text)
+    for pattern, replacement in TYPO_REPLACEMENTS:
+        normalized = re.sub(pattern, replacement, normalized)
     today = date.today()
     if "pasado manana" in normalized:
         return (today + timedelta(days=2)).isoformat()
@@ -921,14 +957,19 @@ def _build_message(response: NLPParseOrderResponse) -> str:
 
     responses = []
     has_issues = False
+    questions_by_item: dict[int, list[NLPClarificationQuestion]] = {}
+    for question in response.clarification_questions:
+        if question.item_index is None:
+            continue
+        questions_by_item.setdefault(question.item_index, []).append(question)
 
     for index, item in enumerate(response.items):
-        num = f"{index + 1}."
+        prefix = "-"
 
         # 1. Solid food
         if item.clarification_reason == "solid_food" or _is_non_beverage(item.raw_text):
             responses.append(
-                f"{num} {item.producto_detectado or item.raw_text} - "
+                f"{prefix} {item.producto_detectado or item.raw_text}: "
                 "No vendemos ese producto. Somos una empresa de bebidas y solo "
                 "distribuimos productos liquidos."
             )
@@ -938,7 +979,7 @@ def _build_message(response: NLPParseOrderResponse) -> str:
         # 2. Alcohol
         if item.clarification_reason == "alcohol":
             responses.append(
-                f"{num} {item.producto_detectado or item.raw_text} - "
+                f"{prefix} {item.producto_detectado or item.raw_text}: "
                 "No distribuimos bebidas alcoholicas."
             )
             has_issues = True
@@ -948,7 +989,7 @@ def _build_message(response: NLPParseOrderResponse) -> str:
         if not item.sku_candidates:
             alt = _suggest_alternative(item.raw_text)
             responses.append(
-                f"{num} {item.raw_text} - No tengo ese producto, pero {alt}. "
+                f"{prefix} {item.raw_text}: No tengo ese producto, pero {alt}. "
                 "Deseas cambiarlo?"
             )
             has_issues = True
@@ -962,7 +1003,7 @@ def _build_message(response: NLPParseOrderResponse) -> str:
         if top_score < CONFIRM_SCORE:
             alt = _suggest_alternative(item.raw_text)
             responses.append(
-                f"{num} {item.raw_text} - No tengo ese producto exacto, pero {alt}. "
+                f"{prefix} {item.raw_text}: No tengo ese producto exacto, pero {alt}. "
                 "Deseas cambiarlo?"
             )
             has_issues = True
@@ -974,36 +1015,56 @@ def _build_message(response: NLPParseOrderResponse) -> str:
         if requested_variant and not _matched_name_contains_variant(matched_name, requested_variant):
             alt = _suggest_alternative(item.raw_text)
             responses.append(
-                f"{num} {item.raw_text} - No tengo esa variante, pero {alt}. "
+                f"{prefix} {item.raw_text}: No tengo esa variante, pero {alt}. "
                 "Deseas alguna de esas?"
             )
             has_issues = True
             continue
 
-        # 6. Stock issue
+        # 6. Ambiguous product/presentation: show the same clarification that
+        # was persisted, so the next short reply resolves the visible question.
+        item_questions = questions_by_item.get(index, [])
+        match_question = next(
+            (question for question in item_questions if question.type in {"presentation", "sku"}),
+            None,
+        )
+        if item.requires_clarification and match_question:
+            responses.append(f"{prefix} {match_question.message}")
+            has_issues = True
+            continue
+
+        # 7. Stock issue
         if top.stock is not None and top.stock < item.cantidad:
             responses.append(
-                f"{num} {top.product} - No tengo suficiente stock. "
+                f"{prefix} {top.product}: No tengo suficiente stock. "
                 f"Disponible: {top.stock} unidades."
             )
             has_issues = True
             continue
 
-        # 7. Quantity not detected
+        # 8. Quantity not detected
         if not item.cantidad_detectada:
             responses.append(
-                f"{num} {top.product} - Cuantas unidades deseas?"
+                f"{prefix} {top.product}: Cuantas unidades deseas?"
             )
             has_issues = True
             continue
 
-        # 8. All good - product found and matched
+        # 9. All good - product found and matched
         name = item.producto_normalizado or top.product
         presentation = f" {item.presentacion}" if item.presentacion else ""
         if presentation and presentation.strip().lower() in name.lower():
             presentation = ""
         qty = item.cantidad
-        responses.append(f"{num} {qty} x {name}{presentation} - Anotado.")
+        responses.append(f"{prefix} {qty} x {name}{presentation} - Anotado.")
+
+    global_questions = [
+        question for question in response.clarification_questions
+        if question.item_index is None
+    ]
+    for question in global_questions:
+        responses.append(f"- {question.message}")
+        has_issues = True
 
     greeting = "Con gusto proceso tu pedido.\n\n"
     items_list = "\n".join(responses)
@@ -1551,6 +1612,12 @@ def _last_pending_order_text(db, *, user_id: str) -> str | None:
 
 def _last_pending_clarification(db, *, user_id: str) -> dict[str, Any] | None:
     """Return the first unresolved clarification from the user's most recent interaction."""
+    events = _last_pending_clarifications(db, user_id=user_id)
+    return events[0] if events else None
+
+
+def _last_pending_clarifications(db, *, user_id: str) -> list[dict[str, Any]]:
+    """Return unresolved clarifications from the user's most recent interaction."""
     try:
         latest = (
             db.table("clarification_events")
@@ -1563,24 +1630,24 @@ def _last_pending_clarification(db, *, user_id: str) -> dict[str, Any] | None:
             .data
         )
         if not latest:
-            return None
+            return []
         interaction_id = latest[0].get("interaction_id")
         if not interaction_id:
-            return None
-        # Get the first unresolved event from that interaction (matches
-        # the question shown to the user, since _build_message uses [0]).
+            return []
         events = (
             db.table("clarification_events")
             .select("*")
             .eq("interaction_id", interaction_id)
             .eq("resolved", False)
             .order("created_at")
-            .limit(1)
             .execute()
             .data
         )
-        event = events[0] if events else None
-        if event:
+        if not events:
+            return []
+
+        fresh_events = []
+        for event in events:
             created_at_str = event.get("created_at")
             if created_at_str:
                 if created_at_str.endswith("Z"):
@@ -1589,12 +1656,61 @@ def _last_pending_clarification(db, *, user_id: str) -> dict[str, Any] | None:
                     created_at_dt = datetime.fromisoformat(created_at_str)
                     now = datetime.now(timezone.utc)
                     if (now - created_at_dt).total_seconds() > MAX_CLARIFICATION_AGE_SECONDS:
-                        return None
+                        continue
                 except Exception:
                     pass
-        return event
+            fresh_events.append(event)
+        return fresh_events
     except Exception:
-        return None
+        return []
+
+
+_BRANDS = {"coca", "cola", "cielo", "agua", "volt", "oro", "pulp", "cifrut", "sporade", "tea"}
+
+def _get_brand_keywords(text: str) -> set[str]:
+    words = {w.strip(".,!?()-\"'/") for w in text.lower().split()}
+    return words & _BRANDS
+
+def _is_valid_clarification_reply_for_pending(text: str, pending: dict[str, Any]) -> bool:
+    user_brands = _get_brand_keywords(text)
+    if not user_brands:
+        return True
+        
+    pending_text_source = []
+    q_text = pending.get("question_text")
+    if q_text:
+        pending_text_source.append(q_text)
+        
+    options = pending.get("options") or []
+    for opt in options:
+        p_name = opt.get("product")
+        if p_name:
+            pending_text_source.append(p_name)
+            
+    pending_combined = " ".join(pending_text_source)
+    pending_brands = _get_brand_keywords(pending_combined)
+    
+    if user_brands - pending_brands:
+        return False
+        
+    return True
+
+
+def _matching_pending_clarification(
+    db,
+    *,
+    user_id: str,
+    text: str,
+) -> tuple[dict[str, Any], str] | tuple[None, None]:
+    for pending in _last_pending_clarifications(db, user_id=user_id):
+        if not _is_valid_clarification_reply_for_pending(text, pending):
+            continue
+        enriched = _interpret_clarification_reply(
+            db, text=text, clarification=pending,
+        )
+        if enriched:
+            return pending, enriched
+    return None, None
 
 
 def _resolve_clarification(db, clarification_id: str, answer_text: str) -> None:
@@ -1609,28 +1725,11 @@ def _resolve_clarification(db, clarification_id: str, answer_text: str) -> None:
 
 
 def _is_clarification_reply(text: str) -> bool:
-    """Check if text looks like a short reply to a pending clarification.
-
-    Numbers, presentations ("1l", "500ml"), and contextual words ("si", "ok",
-    "esa") are replies.  Product names ("agua", "big cola") are NOT replies —
-    they start a new order even when there is a pending clarification.
-    """
+    """Check if text looks like a short reply to a pending clarification."""
     normalized = _normalize(text)
     if not normalized:
         return False
     if normalized in COMMAND_TEXTS or normalized in GREETING_TEXTS:
-        return False
-    if CONTEXTUAL_REPLY_RE.search(text or ""):
-        return True
-    # Pure number or presentation → reply ("1", "500", "1l", "500ml")
-    if re.fullmatch(r"\d+(?:[.,]\d+)?(?:\s*(?:l|lt|lts|ml|litro|litros))?", normalized):
-        return True
-    tokens = normalized.split()
-    if len(tokens) > 3:
-        return False
-    # If the text has product signal it's likely a new order, not a reply
-    clean_item = _remove_quantity(text)
-    if _has_product_signal(clean_item):
         return False
     return True
 
@@ -1828,6 +1927,101 @@ def _merge_context_text(context_text: str | None, text: str) -> str | None:
     return f"{previous} {current}"
 
 
+def _family_key(value: str | None) -> str:
+    text = PRESENTATION_RE.sub("", _normalize(value)).replace("-", " ")
+    text = re.sub(r"\b(light|normal)\b", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _parsed_item_name(item: NLPParsedOrderItem) -> str | None:
+    if item.producto_normalizado:
+        return item.producto_normalizado
+    if item.sku_candidates:
+        return item.sku_candidates[0].product
+    return item.producto_detectado or item.raw_text
+
+
+def _delivery_suffix_from_context(*texts: str | None) -> str:
+    for value in texts:
+        normalized = _normalize(value)
+        for pattern, replacement in TYPO_REPLACEMENTS:
+            normalized = re.sub(pattern, replacement, normalized)
+        if "pasado manana" in normalized:
+            return " para pasado manana"
+        if "manana" in normalized:
+            return " para manana"
+        if re.search(r"\bhoy\b", normalized):
+            return " para hoy"
+    return ""
+
+
+def _contextual_correction_text(
+    db,
+    *,
+    user_id: str,
+    context_text: str | None,
+    text: str,
+    requested_store_id: str | None = None,
+) -> str | None:
+    """Build a corrected order from a follow-up using quantities from context.
+
+    Example:
+      context: "Para maniana quiero 4 volt y 2 coca light"
+      reply:   "Volt de 300 y si coca cola de 2 litros"
+      output:  "4 Volt 300ml y 2 Coca-Cola 2L para manana"
+    """
+    previous = (context_text or "").strip()
+    current = (text or "").strip()
+    if not previous or not current:
+        return None
+    if _quantity_detected(current):
+        return None
+
+    base = _parse_order_payload(
+        db,
+        text=previous,
+        user_id=user_id,
+        requested_store_id=requested_store_id,
+        persist=False,
+        require_store=False,
+    )
+    followup = _parse_order_payload(
+        db,
+        text=current,
+        user_id=user_id,
+        requested_store_id=requested_store_id,
+        persist=False,
+        require_store=False,
+    )
+
+    quantities_by_family: dict[str, int] = {}
+    for item in base.items:
+        if not item.cantidad_detectada:
+            continue
+        family = _family_key(_parsed_item_name(item))
+        if family:
+            quantities_by_family.setdefault(family, item.cantidad)
+
+    parts: list[str] = []
+    used_families: set[str] = set()
+    for item in followup.items:
+        if not item.sku_candidates:
+            continue
+        name = item.producto_normalizado or item.sku_candidates[0].product
+        family = _family_key(name)
+        if not name or not family or family in used_families:
+            continue
+        quantity = quantities_by_family.get(family)
+        if not quantity:
+            continue
+        parts.append(f"{quantity} {name}")
+        used_families.add(family)
+
+    if not parts:
+        return None
+    return " y ".join(parts) + _delivery_suffix_from_context(previous, current)
+
+
 def _is_negation_only(text: str) -> bool:
     """Returns True if the message is a pure negation without a product request."""
     normalized = _normalize(text)
@@ -1882,52 +2076,50 @@ def draft_order_chat_reply(
 
     # ── Handle pending clarification replies ──────────────────────
     if _is_clarification_reply(text):
-        pending = _last_pending_clarification(db, user_id=user_id)
-        if pending:
-            enriched = _interpret_clarification_reply(
-                db, text=text, clarification=pending,
+        pending, enriched = _matching_pending_clarification(
+            db, user_id=user_id, text=text,
+        )
+        if pending and enriched:
+            _resolve_clarification(
+                db, pending.get("id", ""), text,
             )
-            if enriched:
-                _resolve_clarification(
-                    db, pending.get("id", ""), text,
-                )
-                store_id = pending.get("store_id") or requested_store_id
+            store_id = pending.get("store_id") or requested_store_id
 
-                if active_order_id:
-                    order = _fetch_draft_order(db, user_id=user_id, order_id=active_order_id)
-                    if order:
-                        parsed = _parse_order_payload(
-                            db,
-                            text=enriched,
-                            user_id=user_id,
-                            requested_store_id=order.get("store_id"),
-                            persist=True,
-                            require_store=True,
-                            default_delivery_date=order.get("delivery_date"),
-                        )
-                        if parsed.requires_clarification or parsed.validation_status != "valid":
-                            return parsed.message
+            if active_order_id:
+                order = _fetch_draft_order(db, user_id=user_id, order_id=active_order_id)
+                if order:
+                    parsed = _parse_order_payload(
+                        db,
+                        text=enriched,
+                        user_id=user_id,
+                        requested_store_id=order.get("store_id"),
+                        persist=True,
+                        require_store=True,
+                        default_delivery_date=order.get("delivery_date"),
+                    )
+                    if parsed.requires_clarification or parsed.validation_status != "valid":
+                        return parsed.message
 
-                        updated_order = _append_items_to_draft_from_response(
-                            db,
-                            user_id=user_id,
-                            raw_text=enriched,
-                            order=order,
-                            response=parsed,
-                        )
-                        return _draft_detail_message(updated_order, updated=True)
+                    updated_order = _append_items_to_draft_from_response(
+                        db,
+                        user_id=user_id,
+                        raw_text=enriched,
+                        order=order,
+                        response=parsed,
+                    )
+                    return _draft_detail_message(updated_order, updated=True)
 
-                response = _draft_order_payload(
-                    db,
-                    text=enriched,
-                    user_id=user_id,
-                    requested_store_id=store_id,
-                    persist=True,
-                )
-                if response.draft_created:
-                    return response.message
-                if response.items or response.clarification_questions:
-                    return response.message
+            response = _draft_order_payload(
+                db,
+                text=enriched,
+                user_id=user_id,
+                requested_store_id=store_id,
+                persist=True,
+            )
+            if response.draft_created:
+                return response.message
+            if response.items or response.clarification_questions:
+                return response.message
 
     if active_order_id:
         draft_reply = _append_items_to_draft_from_text(
@@ -1940,6 +2132,26 @@ def draft_order_chat_reply(
             return draft_reply
 
     context_text = _context_order_text(db, user_id=user_id, context=context)
+
+    contextual_text = _contextual_correction_text(
+        db,
+        user_id=user_id,
+        context_text=context_text,
+        text=text,
+        requested_store_id=requested_store_id,
+    )
+    if contextual_text:
+        response = _draft_order_payload(
+            db,
+            text=contextual_text,
+            user_id=user_id,
+            requested_store_id=requested_store_id,
+            persist=True,
+        )
+        if response.draft_created:
+            return response.message
+        if response.items or response.clarification_questions:
+            return response.message
 
     if _should_parse_before_context(text):
         response = _draft_order_payload(
@@ -2167,3 +2379,13 @@ async def nlp_metrics(_user_id: str = Depends(get_current_user_id)):
         "requires_human_review_rate": round(review_count / total, 2),
         "by_status": by_status,
     }
+
+
+@router.get("/llm-status", tags=["nlp"])
+async def llm_status():
+    """Return the operational status of the Ollama LLM fallback service.
+
+    Useful for monitoring dashboards and deployment verification.
+    """
+    from app.services.llm import check_ollama_status  # local import to avoid circular deps
+    return await check_ollama_status()

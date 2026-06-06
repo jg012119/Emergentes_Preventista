@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   FlatList,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -28,11 +29,9 @@ const INTRO_MESSAGE = {
 };
 
 const getSpeechRecognitionModule = () => {
-  if (!NativeModulesProxy?.ExpoSpeechRecognition) {
-    return null;
-  }
   try {
-    return require('expo-speech-recognition').ExpoSpeechRecognitionModule;
+    const { ExpoSpeechRecognitionModule } = require('expo-speech-recognition');
+    return ExpoSpeechRecognitionModule || null;
   } catch (error) {
     return null;
   }
@@ -78,12 +77,14 @@ const ORDER_SUGGESTIONS = [
 
 const CHAT_ACTION_PREFIX = '@@action ';
 const ACTIVE_DRAFT_ORDER_KEY = 'preventista.activeDraftOrderId';
-const PENDING_ORDER_TEXT_KEY = 'preventista.pendingOrderText';
+const LEGACY_PENDING_ORDER_TEXT_KEY = 'preventista.pendingOrderText';
+const PENDING_ORDER_TEXT_KEY = 'preventista.pendingOrderText.v2';
 
 const ORDER_CONTEXT_RE = /\b(big|cielo|agua|volt|oro|pulp|cifrut|cola|lata|caja|litro|litros|ml|manana|mañana|hoy|tienda|cliente|un|una|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|\d+)\b/i;
 const NON_ORDER_RE = /^(menu|catalogo|catálogo|lista|lista de pedidos|pedidos|estado|seguimiento)$/i;
 const FRESH_ORDER_RE = /^\s*(quiero|necesito|dame|manda|mandame|mándame|mandale|mándale|pedido|orden)\b/i;
 const CONTEXT_APPEND_RE = /^\s*(tambien|también|ademas|además|y|sumale|súmale|agrega|agregale|agrégale|agregame|agrégame|para|pa|de)\b/i;
+const SHORT_CLARIFICATION_RE = /^\s*(si|sí|ok|okay|dale|correcto|esa|ese|eso|\d+(?:[.,]\d+)?(?:\s*(?:ml|l|lt|lts|litro|litros))?)\s*$/i;
 
 const parseMessageParts = (message) => {
   const actions = [];
@@ -130,6 +131,7 @@ const findActiveDraftOrderId = (messages) => {
 const shouldKeepPendingOrderText = (message) => {
   const clean = String(message || '').trim();
   if (!clean || NON_ORDER_RE.test(clean)) return false;
+  if (SHORT_CLARIFICATION_RE.test(clean)) return false;
   return ORDER_CONTEXT_RE.test(clean);
 };
 
@@ -175,6 +177,7 @@ export default function ChatScreen({ route, navigation }) {
   const [feedbackPending, setFeedbackPending] = useState({});
   const [activeDraftOrderId, setActiveDraftOrderId] = useState(null);
   const [pendingOrderText, setPendingOrderText] = useState('');
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const listRef = useRef(null);
   const speechModuleRef = useRef(null);
   const lastTranscriptRef = useRef('');
@@ -185,9 +188,9 @@ export default function ChatScreen({ route, navigation }) {
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
       try {
-        listRef.current?.scrollToOffset({ offset: 0, animated: true });
+        listRef.current?.scrollToOffset({ offset: 0, animated: false });
       } catch (_) {}
-    }, 50);
+    }, 80);
   }, []);
 
   const persistActiveDraftOrderId = useCallback((nextOrderId) => {
@@ -210,6 +213,7 @@ export default function ChatScreen({ route, navigation }) {
   }, []);
 
   const load = useCallback(() => {
+    if (sending) return;
     const request = isOrderChat ? getChat(orderId) : getGeneralChat();
     request
       .then((data) => {
@@ -232,10 +236,15 @@ export default function ChatScreen({ route, navigation }) {
           }
         }
         setMessages((prev) => {
-          if (nextMsgs.length > prev.length) {
+          const localPending = prev.filter(
+            (m) => String(m.id).startsWith('local-') &&
+                   !nextMsgs.some((msg) => msg.sender === 'user' && msg.message === m.message)
+          );
+          const combined = [...nextMsgs, ...localPending];
+          if (combined.length > prev.length) {
             scrollToBottom();
           }
-          return nextMsgs;
+          return combined;
         });
         setErrorMessage('');
       })
@@ -250,6 +259,7 @@ export default function ChatScreen({ route, navigation }) {
     persistActiveDraftOrderId,
     persistPendingOrderText,
     scrollToBottom,
+    sending,
   ]);
 
   useEffect(() => {
@@ -263,9 +273,28 @@ export default function ChatScreen({ route, navigation }) {
         if (values[PENDING_ORDER_TEXT_KEY]) {
           setPendingOrderText(values[PENDING_ORDER_TEXT_KEY]);
         }
+        AsyncStorage.removeItem(LEGACY_PENDING_ORDER_TEXT_KEY).catch(() => {});
       })
       .catch(() => {});
   }, [isOrderChat]);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSub = Keyboard.addListener(showEvent, () => {
+      setKeyboardVisible(true);
+      scrollToBottom();
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardVisible(false);
+      scrollToBottom();
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, [scrollToBottom]);
 
   const sendTextMessage = useCallback(async (rawText) => {
     const clean = String(rawText || '').trim();
@@ -288,6 +317,8 @@ export default function ChatScreen({ route, navigation }) {
 
     setMessages((prev) => [...prev, optimistic]);
     setText('');
+    Keyboard.dismiss();
+    setKeyboardVisible(false);
     setSending(true);
     setErrorMessage('');
     scrollToBottom();
@@ -611,6 +642,7 @@ export default function ChatScreen({ route, navigation }) {
   const suggestions = isOrderChat ? ORDER_SUGGESTIONS : GENERAL_SUGGESTIONS;
   const hasText = text.trim().length > 0;
   const actionIcon = recognizing ? 'stop' : hasText ? 'send' : 'mic';
+  const showCompactChat = keyboardVisible || sending;
 
   return (
     <GradientScreen style={s.screen}>
@@ -639,8 +671,8 @@ export default function ChatScreen({ route, navigation }) {
 
       <KeyboardAvoidingView
         style={s.keyboard}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 4 : 0}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? Math.max(insets.top, 0) : 0}
       >
         {isOrderChat && orderStatus === 'borrador' ? (
           <View style={s.submitBanner}>
@@ -660,7 +692,7 @@ export default function ChatScreen({ route, navigation }) {
           </View>
         ) : null}
 
-        {!isOrderChat ? (
+        {!isOrderChat && !showCompactChat ? (
           <View style={s.shortcuts}>
             <TouchableOpacity style={s.shortcut} onPress={openCatalogForNewOrder}>
               <Ionicons name="add-circle-outline" size={18} color={C.accent} />
@@ -683,7 +715,13 @@ export default function ChatScreen({ route, navigation }) {
           inverted
           keyExtractor={(item) => String(item.id)}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={s.listContent}
+          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+          removeClippedSubviews={false}
+          maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
+          contentContainerStyle={[
+            s.listContent,
+            showCompactChat && s.listContentCompact,
+          ]}
           renderItem={({ item }) => {
             const isUser = item.sender === 'user';
             const canRate = !isUser && !item.failed && !String(item.id).startsWith('intro-') && !String(item.id).startsWith('local-');
@@ -760,29 +798,36 @@ export default function ChatScreen({ route, navigation }) {
           </View>
         ) : null}
 
-        <View style={s.suggestionWrap}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={s.suggestionContent}
-          >
-            {suggestions.map((suggestion) => (
-              <TouchableOpacity
-                key={suggestion}
-                activeOpacity={0.82}
-                style={[s.suggestionChip, sending && s.suggestionChipDisabled]}
-                onPress={() => sendTextMessage(suggestion)}
-                disabled={sending}
-              >
-                <Text style={s.suggestionText}>{suggestion}</Text>
-                <Ionicons name="send" size={12} color={C.whiteSoft} />
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+        {!showCompactChat ? (
+          <View style={s.suggestionWrap}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={s.suggestionContent}
+            >
+              {suggestions.map((suggestion) => (
+                <TouchableOpacity
+                  key={suggestion}
+                  activeOpacity={0.82}
+                  style={[s.suggestionChip, sending && s.suggestionChipDisabled]}
+                  onPress={() => sendTextMessage(suggestion)}
+                  disabled={sending}
+                >
+                  <Text style={s.suggestionText}>{suggestion}</Text>
+                  <Ionicons name="send" size={12} color={C.whiteSoft} />
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        ) : null}
 
-        <View style={[s.composerWrap, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+        <View
+          style={[
+            s.composerWrap,
+            { paddingBottom: keyboardVisible ? 8 : Math.max(insets.bottom, 10) },
+          ]}
+        >
           <View style={s.composer}>
             <TouchableOpacity style={s.inlineIcon} onPress={openCatalogForChat}>
               <Ionicons name="add" size={22} color={C.muted} />
@@ -796,7 +841,9 @@ export default function ChatScreen({ route, navigation }) {
               multiline
               maxLength={500}
               returnKeyType="default"
-              textAlignVertical="center"
+              blurOnSubmit={false}
+              scrollEnabled
+              textAlignVertical="top"
             />
           </View>
           <TouchableOpacity
@@ -904,6 +951,10 @@ const s = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 12,
   },
+  listContentCompact: {
+    paddingTop: 8,
+    paddingBottom: 8,
+  },
   bubble: {
     maxWidth: '82%',
     borderRadius: 16,
@@ -915,12 +966,14 @@ const s = StyleSheet.create({
   },
   userBubble: {
     alignSelf: 'flex-end',
+    maxWidth: '82%',
     backgroundColor: C.userBubble,
     borderColor: C.userBubbleBorder,
     borderBottomRightRadius: 4,
   },
   agentBubble: {
     alignSelf: 'flex-start',
+    maxWidth: '90%',
     backgroundColor: 'rgba(42,33,82,0.64)',
     borderColor: C.border,
     borderBottomLeftRadius: 4,
@@ -1021,9 +1074,9 @@ const s = StyleSheet.create({
   },
   composer: {
     flex: 1,
-    minHeight: 46,
+    minHeight: 48,
     maxHeight: 112,
-    borderRadius: 23,
+    borderRadius: 24,
     backgroundColor: C.surfaceAlt,
     borderWidth: 1,
     borderColor: C.border,
@@ -1034,18 +1087,20 @@ const s = StyleSheet.create({
   },
   inlineIcon: {
     width: 34,
-    height: 44,
+    height: 46,
     alignItems: 'center',
     justifyContent: 'center',
   },
   input: {
     flex: 1,
-    minHeight: 44,
+    minHeight: 46,
     maxHeight: 104,
     color: C.text,
     fontSize: 15,
-    paddingTop: 11,
+    lineHeight: 20,
+    paddingTop: 12,
     paddingBottom: 10,
+    paddingHorizontal: 0,
   },
   actionButton: {
     width: 46,

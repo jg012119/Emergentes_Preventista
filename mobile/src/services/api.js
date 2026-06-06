@@ -1,7 +1,13 @@
 // mobile/src/services/api.js
 // Wrapper around the FastAPI backend for chat and order operations.
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://192.168.100.41:8000";
+import { Platform } from "react-native";
+
+const DEFAULT_BASE_URL = Platform.OS === "android"
+  ? "http://10.0.2.2:8000"
+  : "http://localhost:8000";
+
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL || DEFAULT_BASE_URL;
 
 let authToken = null;
 let onUnauthorizedCallback = null;

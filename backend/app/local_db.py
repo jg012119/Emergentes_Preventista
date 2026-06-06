@@ -157,7 +157,35 @@ CREATE TABLE IF NOT EXISTS clarification_events (
     resolved       INTEGER DEFAULT 0,
     created_at     TEXT DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS llm_logs (
+    id             TEXT PRIMARY KEY,
+    user_id        TEXT REFERENCES users(id) ON DELETE SET NULL,
+    model          TEXT NOT NULL,
+    message        TEXT NOT NULL,
+    intent         TEXT,
+    raw_response   TEXT,
+    parsed_json    JSON,
+    success        INTEGER DEFAULT 0,
+    error          TEXT,
+    latency_ms     INTEGER,
+    prompt_tokens  INTEGER,
+    eval_tokens    INTEGER,
+    created_at     TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS chat_session_state (
+    user_id                  TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    active_order_id          TEXT REFERENCES orders(id) ON DELETE SET NULL,
+    last_detected_products   JSON,
+    pending_clarification    JSON,
+    last_store_id            TEXT REFERENCES stores(id) ON DELETE SET NULL,
+    last_delivery_date       TEXT,
+    updated_at               TEXT DEFAULT (datetime('now')),
+    expires_at               TEXT
+);
 """
+
 
 # bcrypt hash for 'admin123'
 _ADMIN_HASH = "$2b$12$w8vHrPmWbBxqzTKCP4aiuel1wIVaeCU/w1crvkZi3pOmyaxoLg6c."
@@ -305,7 +333,7 @@ _SEED_ALIASES = [
 # ---------------------------------------------------------------------------
 # Columns that are booleans stored as INTEGER in SQLite
 # ---------------------------------------------------------------------------
-_BOOL_COLUMNS = {"active", "is_active", "requires_human_review", "resolved"}
+_BOOL_COLUMNS = {"active", "is_active", "requires_human_review", "resolved", "success"}
 _JSON_COLUMNS = {
     "nlp_data",
     "extracted_json",
@@ -314,6 +342,9 @@ _JSON_COLUMNS = {
     "corrected_extraction",
     "options",
     "context",
+    "parsed_json",
+    "last_detected_products",
+    "pending_clarification",
 }
 
 

@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
+  View, Text, TextInput, TouchableOpacity, Platform,
   StyleSheet, ScrollView, Alert, ActivityIndicator,
 } from 'react-native';
+import Constants from 'expo-constants';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { createStore, updateStore } from '../services/api';
@@ -17,6 +18,8 @@ const DELTA = 0.01;
 export default function CreateStoreScreen({ route, navigation }) {
   const store = route?.params?.store ?? null;
   const isEditing = Boolean(store?.id);
+  const googleMapsApiKey = Constants.expoConfig?.android?.config?.googleMaps?.apiKey ?? null;
+  const canRenderMap = Platform.OS !== 'android' || Boolean(googleMapsApiKey);
 
   const initialLat = store?.latitude != null ? Number(store.latitude) : DEFAULT_LAT;
   const initialLng = store?.longitude != null ? Number(store.longitude) : DEFAULT_LNG;
@@ -48,6 +51,15 @@ export default function CreateStoreScreen({ route, navigation }) {
 
   const handleDragEnd = useCallback((e) => {
     setPinCoords(e.nativeEvent.coordinate);
+  }, []);
+
+  const updateCoordinate = useCallback((axis, value) => {
+    const parsed = Number(value.replace(',', '.'));
+    if (Number.isNaN(parsed)) return;
+    setPinCoords((prev) => ({
+      ...prev,
+      [axis]: parsed,
+    }));
   }, []);
 
   const handleMyLocation = async () => {
@@ -149,31 +161,69 @@ export default function CreateStoreScreen({ route, navigation }) {
         <Text style={s.label}>Ubicación en el mapa *</Text>
         <Text style={s.hint}>Toca el mapa para colocar el pin o arrástralo para ajustar.</Text>
 
-        <View style={s.mapContainer}>
-          <MapView
-            ref={mapRef}
-            style={s.map}
-            initialRegion={region}
-            onPress={handleMapPress}
-            showsUserLocation={false}
-            showsMyLocationButton={false}
-          >
-            <Marker
-              coordinate={pinCoords}
-              draggable
-              onDragEnd={handleDragEnd}
-              pinColor={C.accent}
-            />
-          </MapView>
+        {canRenderMap ? (
+          <View style={s.mapContainer}>
+            <MapView
+              ref={mapRef}
+              style={s.map}
+              initialRegion={region}
+              onPress={handleMapPress}
+              showsUserLocation={false}
+              showsMyLocationButton={false}
+            >
+              <Marker
+                coordinate={pinCoords}
+                draggable
+                onDragEnd={handleDragEnd}
+                pinColor={C.accent}
+              />
+            </MapView>
 
-          {/* Botón Mi Ubicación */}
-          <TouchableOpacity style={s.myLocationBtn} onPress={handleMyLocation} disabled={locating}>
-            {locating
-              ? <ActivityIndicator size="small" color={C.accent} />
-              : <Ionicons name="locate-outline" size={22} color={C.accent} />
-            }
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity style={s.myLocationBtn} onPress={handleMyLocation} disabled={locating}>
+              {locating
+                ? <ActivityIndicator size="small" color={C.accent} />
+                : <Ionicons name="locate-outline" size={22} color={C.accent} />
+              }
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={s.mapFallback}>
+            <Ionicons name="map-outline" size={26} color={C.accent} />
+            <Text style={s.mapFallbackTitle}>Mapa no disponible en Android</Text>
+            <Text style={s.mapFallbackText}>
+              Falta configurar la API key de Google Maps. Puedes guardar la sucursal con estas coordenadas o ajustar latitud y longitud manualmente.
+            </Text>
+
+            <View style={s.coordsInputRow}>
+              <View style={s.coordInputBox}>
+                <Text style={s.coordInputLabel}>Latitud</Text>
+                <TextInput
+                  style={s.coordInput}
+                  value={String(pinCoords.latitude)}
+                  onChangeText={(value) => updateCoordinate('latitude', value)}
+                  keyboardType="decimal-pad"
+                />
+              </View>
+              <View style={s.coordInputBox}>
+                <Text style={s.coordInputLabel}>Longitud</Text>
+                <TextInput
+                  style={s.coordInput}
+                  value={String(pinCoords.longitude)}
+                  onChangeText={(value) => updateCoordinate('longitude', value)}
+                  keyboardType="decimal-pad"
+                />
+              </View>
+            </View>
+
+            <TouchableOpacity style={s.myLocationFallbackBtn} onPress={handleMyLocation} disabled={locating}>
+              {locating
+                ? <ActivityIndicator size="small" color={C.accent} />
+                : <Ionicons name="locate-outline" size={18} color={C.accent} />
+              }
+              <Text style={s.myLocationFallbackText}>Usar mi ubicación</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Coordenadas como referencia */}
         <View style={s.coordsRow}>
@@ -225,6 +275,67 @@ const s = StyleSheet.create({
     height: 260,
   },
   map: { flex: 1 },
+  mapFallback: {
+    minHeight: 260,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: C.border,
+    backgroundColor: C.input,
+    padding: 16,
+    justifyContent: 'center',
+    gap: 10,
+  },
+  mapFallbackTitle: {
+    color: C.text,
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  mapFallbackText: {
+    color: C.muted,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  coordsInputRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 6,
+  },
+  coordInputBox: {
+    flex: 1,
+  },
+  coordInputLabel: {
+    color: C.muted,
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  coordInput: {
+    backgroundColor: C.card,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    color: C.text,
+    fontSize: 15,
+  },
+  myLocationFallbackBtn: {
+    marginTop: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: C.card,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 10,
+    paddingVertical: 12,
+  },
+  myLocationFallbackText: {
+    color: C.text,
+    fontSize: 14,
+    fontWeight: '700',
+  },
   myLocationBtn: {
     position: 'absolute',
     bottom: 12,
