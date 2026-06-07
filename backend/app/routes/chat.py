@@ -728,10 +728,21 @@ async def _llm_fallback_reply(db, user_id: str, message: str) -> str | None:
 @router.post("/message", response_model=ChatMessageOut, status_code=201)
 async def send_message(body: ChatMessageCreate, user_id: str = Depends(get_current_user_id)):
     db = get_supabase_admin()
+    
+    raw_message = body.message
+    # Si viene de nota de voz, parsear JSON y extraer texto para el agente
+    try:
+        import json
+        parsed = json.loads(raw_message)
+        if isinstance(parsed, dict) and parsed.get("is_voice"):
+            body.message = parsed.get("text", "")
+    except Exception:
+        pass
+
     result = db.table("chat_messages").insert({
         "user_id": user_id,
         "order_id": body.order_id,
-        "message": body.message,
+        "message": raw_message,
         "sender": body.sender,
     }).execute()
 

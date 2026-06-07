@@ -616,5 +616,438 @@
     "delivery_offset_days": 1,
     "expected_clarification_types": ["product"],
     "items": []
+  },
+
+  {"_comment": "=== TRANSCRIPCIONES DE VOZ (sin puntuación, con vacilaciones) ==="},
+
+  {
+    "id": "voz-001",
+    "text": "dame dos big cola de 2 litros y tres aguas cielo chicas para mañana",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Big Cola 2L", "presentation": "2L", "quantity": 2},
+      {"product": "Agua Cielo 500ml", "presentation": "500ml", "quantity": 3}
+    ]
+  },
+  {
+    "id": "voz-002",
+    "text": "a ver necesito cinco voltcitos y dos cielitos grandes",
+    "items": [
+      {"product": "Volt 300ml", "presentation": "300ml", "quantity": 5},
+      {"product": "Agua Cielo 2.5L", "presentation": "2.5L", "quantity": 2}
+    ]
+  },
+  {
+    "id": "voz-003",
+    "text": "quiero tres big cola familiares este cuatro pulpitos y dos oritos para hoy",
+    "delivery_offset_days": 0,
+    "items": [
+      {"product": "Big Cola 2L", "presentation": "2L", "quantity": 3},
+      {"product": "Pulp 300ml", "presentation": "300ml", "quantity": 4},
+      {"product": "Oro 500ml", "presentation": "500ml", "quantity": 2}
+    ]
+  },
+  {
+    "id": "voz-004",
+    "text": "mandame una caja de volt y después tres cifrut de litro para mañana por favor",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Volt 300ml", "presentation": "300ml", "quantity": 1, "unit": "caja"},
+      {"product": "Cifrut 1L", "presentation": "1L", "quantity": 3}
+    ]
+  },
+  {
+    "id": "voz-005",
+    "text": "me das 3 aguas de 1 litro",
+    "items": [
+      {"product": "Agua Cielo 1L", "presentation": "1L", "quantity": 3}
+    ]
+  },
+  {
+    "id": "voz-006",
+    "text": "ehhh dame cuatro big cola de dos litros para mañana",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Big Cola 2L", "presentation": "2L", "quantity": 4}
+    ]
+  },
+  {
+    "id": "voz-007",
+    "text": "necesito este dos cajas de volt y cinco aguas cielo chicas",
+    "items": [
+      {"product": "Volt 300ml", "presentation": "300ml", "quantity": 2, "unit": "caja"},
+      {"product": "Agua Cielo 500ml", "presentation": "500ml", "quantity": 5}
+    ]
+  },
+  {
+    "id": "voz-008",
+    "text": "hola buenas me manda seis big cola familiares y cuatro cielo de litro para mañana",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Big Cola 2L", "presentation": "2L", "quantity": 6},
+      {"product": "Agua Cielo 1L", "presentation": "1L", "quantity": 4}
+    ]
+  },
+  {
+    "id": "voz-009",
+    "text": "a ver quiero dos volt grandes y tres oritos y una big de tres litros",
+    "items": [
+      {"product": "Volt 500ml", "presentation": "500ml", "quantity": 2},
+      {"product": "Oro 500ml", "presentation": "500ml", "quantity": 3},
+      {"product": "Big Cola 3L", "presentation": "3L", "quantity": 1}
+    ]
+  },
+  {
+    "id": "voz-010",
+    "text": "pasame diez aguas cielo chiquitas para hoy",
+    "delivery_offset_days": 0,
+    "items": [
+      {"product": "Agua Cielo 500ml", "presentation": "500ml", "quantity": 10}
+    ]
+  },
+  {
+    "id": "voz-011",
+    "text": "quiero big cola de dos litros y aguas de medio litro para mañana",
+    "delivery_offset_days": 1,
+    "expected_clarification_types": ["quantity"],
+    "items": [
+      {"product": "Big Cola 2L", "presentation": "2L"},
+      {"product": "Agua Cielo 500ml", "presentation": "500ml"}
+    ]
+  },
+  {
+    "id": "voz-012",
+    "text": "entonces dame ocho pulp de litro y seis cifrut de 500 para pasado mañana",
+    "delivery_offset_days": 2,
+    "items": [
+      {"product": "Pulp 1L", "presentation": "1L", "quantity": 8},
+      {"product": "Cifrut 500ml", "presentation": "500ml", "quantity": 6}
+    ]
+  },
+  {
+    "id": "voz-013",
+    "text": "mándame tres voltcitos y dos cielitos y una big familiar pa mañana",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Volt 300ml", "presentation": "300ml", "quantity": 3},
+      {"product": "Agua Cielo 500ml", "presentation": "500ml", "quantity": 2},
+      {"product": "Big Cola 2L", "presentation": "2L", "quantity": 1}
+    ]
+  },
+  {
+    "id": "voz-014",
+    "text": "dame big cola grande",
+    "expected_clarification_types": ["quantity", "date"],
+    "items": [
+      {"product": "Big Cola 2L", "presentation": "2L"}
+    ]
+  },
+  {
+    "id": "voz-015",
+    "text": "necesito agua cielo y volt para mañana",
+    "delivery_offset_days": 1,
+    "expected_clarification_types": ["quantity", "presentation"],
+    "items": []
+  },
+  {
+    "id": "voz-016",
+    "text": "quiero coca cola de litro para mañana dos unidades",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Coca-Cola 1L", "presentation": "1L", "quantity": 2}
+    ]
+  },
+  {
+    "id": "voz-017",
+    "text": "mándame cuatro big de 500 mililitros y tres cielo de 2 litros y medio",
+    "items": [
+      {"product": "Big Cola 500ml", "presentation": "500ml", "quantity": 4},
+      {"product": "Agua Cielo 2.5L", "presentation": "2.5L", "quantity": 3}
+    ]
+  },
+  {
+    "id": "voz-018",
+    "text": "a ver este necesito para la tienda don pepe cinco big cola dos litros y diez aguas cielo chicas para mañana",
+    "delivery_offset_days": 1,
+    "require_store": true,
+    "expected_clarification_types": ["customer"],
+    "items": [
+      {"product": "Big Cola 2L", "presentation": "2L", "quantity": 5},
+      {"product": "Agua Cielo 500ml", "presentation": "500ml", "quantity": 10}
+    ]
+  },
+  {
+    "id": "voz-019",
+    "text": "dame tres coquitas de dos litros",
+    "items": [
+      {"product": "Coca-Cola 2L", "presentation": "2L", "quantity": 3}
+    ]
+  },
+  {
+    "id": "voz-020",
+    "text": "quiero dos sporade chico y tres sporade de litro",
+    "items": [
+      {"product": "Sporade 500ml", "presentation": "500ml", "quantity": 2},
+      {"product": "Sporade 1L", "presentation": "1L", "quantity": 3}
+    ]
+  },
+  {
+    "id": "voz-021",
+    "text": "ehhh mandame una docena de cielo personal y seis volt lata para hoy",
+    "delivery_offset_days": 0,
+    "items": [
+      {"product": "Agua Cielo 500ml", "presentation": "500ml", "quantity": 12},
+      {"product": "Volt 300ml", "presentation": "300ml", "quantity": 6, "unit": "lata"}
+    ]
+  },
+  {
+    "id": "voz-022",
+    "text": "dame este cinco big cola 3 litros y cuatro oro grande para mañana",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Big Cola 3L", "presentation": "3L", "quantity": 5},
+      {"product": "Oro 2L", "presentation": "2L", "quantity": 4}
+    ]
+  },
+  {
+    "id": "voz-023",
+    "text": "buenas tardes necesito dos cifrut de dos litros y cuatro pulp de litro para mañana",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Cifrut 2L", "presentation": "2L", "quantity": 2},
+      {"product": "Pulp 1L", "presentation": "1L", "quantity": 4}
+    ]
+  },
+  {
+    "id": "voz-024",
+    "text": "pasame seis big cola de un litro para pasado mañana",
+    "delivery_offset_days": 2,
+    "items": [
+      {"product": "Big Cola 1L", "presentation": "1L", "quantity": 6}
+    ]
+  },
+  {
+    "id": "voz-025",
+    "text": "oye mándame tres agua cielo de litro y después dos big cola familiares",
+    "items": [
+      {"product": "Agua Cielo 1L", "presentation": "1L", "quantity": 3},
+      {"product": "Big Cola 2L", "presentation": "2L", "quantity": 2}
+    ]
+  },
+  {
+    "id": "voz-026",
+    "text": "entonces quiero cuatro voltcitos y cinco cielitos chicos y tres oritos para mañana",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Volt 300ml", "presentation": "300ml", "quantity": 4},
+      {"product": "Agua Cielo 500ml", "presentation": "500ml", "quantity": 5},
+      {"product": "Oro 500ml", "presentation": "500ml", "quantity": 3}
+    ]
+  },
+  {
+    "id": "voz-027",
+    "text": "dame dos aguas grandes y una big de tres litros",
+    "items": [
+      {"product": "Agua Cielo 2.5L", "presentation": "2.5L", "quantity": 2},
+      {"product": "Big Cola 3L", "presentation": "3L", "quantity": 1}
+    ]
+  },
+  {
+    "id": "voz-028",
+    "text": "quiero siete cifrut chico y tres pulp litro",
+    "items": [
+      {"product": "Cifrut 500ml", "presentation": "500ml", "quantity": 7},
+      {"product": "Pulp 1L", "presentation": "1L", "quantity": 3}
+    ]
+  },
+  {
+    "id": "voz-029",
+    "text": "ponme ocho big cola personal para hoy",
+    "delivery_offset_days": 0,
+    "items": [
+      {"product": "Big Cola 500ml", "presentation": "500ml", "quantity": 8}
+    ]
+  },
+  {
+    "id": "voz-030",
+    "text": "necesito para mañana este cuatro cajas de volt y seis big familiares",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Volt 300ml", "presentation": "300ml", "quantity": 4, "unit": "caja"},
+      {"product": "Big Cola 2L", "presentation": "2L", "quantity": 6}
+    ]
+  },
+  {
+    "id": "voz-031",
+    "text": "a ver mandame nueve cielo de litro y dos cifrut grandes para mañana",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Agua Cielo 1L", "presentation": "1L", "quantity": 9},
+      {"product": "Cifrut 2L", "presentation": "2L", "quantity": 2}
+    ]
+  },
+  {
+    "id": "voz-032",
+    "text": "dame una coca cola de medio litro",
+    "items": [
+      {"product": "Coca-Cola 500ml", "presentation": "500ml", "quantity": 1}
+    ]
+  },
+  {
+    "id": "voz-033",
+    "text": "ehhh quiero free tea de medio litro tres unidades para mañana",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Free Tea 500ml", "presentation": "500ml", "quantity": 3}
+    ]
+  },
+  {
+    "id": "voz-034",
+    "text": "entonces necesito cinco pulpitos y dos oro grande y cuatro cielo litro",
+    "items": [
+      {"product": "Pulp 300ml", "presentation": "300ml", "quantity": 5},
+      {"product": "Oro 2L", "presentation": "2L", "quantity": 2},
+      {"product": "Agua Cielo 1L", "presentation": "1L", "quantity": 4}
+    ]
+  },
+  {
+    "id": "voz-035",
+    "text": "hola me das cuatro big cola de tres litros para hoy por favor",
+    "delivery_offset_days": 0,
+    "items": [
+      {"product": "Big Cola 3L", "presentation": "3L", "quantity": 4}
+    ]
+  },
+  {
+    "id": "voz-036",
+    "text": "quiero dos sporade de medio litro y tres volt de 500",
+    "items": [
+      {"product": "Sporade 500ml", "presentation": "500ml", "quantity": 2},
+      {"product": "Volt 500ml", "presentation": "500ml", "quantity": 3}
+    ]
+  },
+  {
+    "id": "voz-037",
+    "text": "mandame diez big cola de dos litros para mañana eso nomas",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Big Cola 2L", "presentation": "2L", "quantity": 10}
+    ]
+  },
+  {
+    "id": "voz-038",
+    "text": "dame tres aguas de un litro y cuatro aguas chicas para mañana",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Agua Cielo 1L", "presentation": "1L", "quantity": 3},
+      {"product": "Agua Cielo 500ml", "presentation": "500ml", "quantity": 4}
+    ]
+  },
+  {
+    "id": "voz-039",
+    "text": "a ver ponme dos big de dos y tres cifrut de litro y un volt grande para hoy",
+    "delivery_offset_days": 0,
+    "items": [
+      {"product": "Big Cola 2L", "presentation": "2L", "quantity": 2},
+      {"product": "Cifrut 1L", "presentation": "1L", "quantity": 3},
+      {"product": "Volt 500ml", "presentation": "500ml", "quantity": 1}
+    ]
+  },
+  {
+    "id": "voz-040",
+    "text": "este necesito once cielo personal para mañana",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Agua Cielo 500ml", "presentation": "500ml", "quantity": 11}
+    ]
+  },
+  {
+    "id": "voz-041",
+    "text": "dame dos coca cola grande y cuatro cielo grande",
+    "items": [
+      {"product": "Coca-Cola 2L", "presentation": "2L", "quantity": 2},
+      {"product": "Agua Cielo 2.5L", "presentation": "2.5L", "quantity": 4}
+    ]
+  },
+  {
+    "id": "voz-042",
+    "text": "necesito para la tienda tres big de litro y ocho volt lata para mañana",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Big Cola 1L", "presentation": "1L", "quantity": 3},
+      {"product": "Volt 300ml", "presentation": "300ml", "quantity": 8, "unit": "lata"}
+    ]
+  },
+  {
+    "id": "voz-043",
+    "text": "mándame cinco cifrut grande y dos pulp de litro para pasado mañana",
+    "delivery_offset_days": 2,
+    "items": [
+      {"product": "Cifrut 2L", "presentation": "2L", "quantity": 5},
+      {"product": "Pulp 1L", "presentation": "1L", "quantity": 2}
+    ]
+  },
+  {
+    "id": "voz-044",
+    "text": "bueno entonces dame cuatro big cola de 500 y seis oro chico",
+    "items": [
+      {"product": "Big Cola 500ml", "presentation": "500ml", "quantity": 4},
+      {"product": "Oro 500ml", "presentation": "500ml", "quantity": 6}
+    ]
+  },
+  {
+    "id": "voz-045",
+    "text": "quiero una caja de volt lata y tres big de tres litros y dos cielo litro para mañana",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Volt 300ml", "presentation": "300ml", "quantity": 1, "unit": "caja"},
+      {"product": "Big Cola 3L", "presentation": "3L", "quantity": 3},
+      {"product": "Agua Cielo 1L", "presentation": "1L", "quantity": 2}
+    ]
+  },
+  {
+    "id": "voz-046",
+    "text": "me das cuatro coca cola personal para hoy",
+    "delivery_offset_days": 0,
+    "items": [
+      {"product": "Coca-Cola 500ml", "presentation": "500ml", "quantity": 4}
+    ]
+  },
+  {
+    "id": "voz-047",
+    "text": "ehhh este mándame siete big cola familiar y cinco aguas cielo chica para mañana",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Big Cola 2L", "presentation": "2L", "quantity": 7},
+      {"product": "Agua Cielo 500ml", "presentation": "500ml", "quantity": 5}
+    ]
+  },
+  {
+    "id": "voz-048",
+    "text": "dame doce oritos y seis pulpitos para hoy nomas",
+    "delivery_offset_days": 0,
+    "items": [
+      {"product": "Oro 500ml", "presentation": "500ml", "quantity": 12},
+      {"product": "Pulp 300ml", "presentation": "300ml", "quantity": 6}
+    ]
+  },
+  {
+    "id": "voz-049",
+    "text": "buenas quiero tres big cola de un litro y después cuatro sporade de 500 para mañana",
+    "delivery_offset_days": 1,
+    "items": [
+      {"product": "Big Cola 1L", "presentation": "1L", "quantity": 3},
+      {"product": "Sporade 500ml", "presentation": "500ml", "quantity": 4}
+    ]
+  },
+  {
+    "id": "voz-050",
+    "text": "necesito ocho cielo familiar y dos volt grande y una big de tres para pasado mañana",
+    "delivery_offset_days": 2,
+    "items": [
+      {"product": "Agua Cielo 2.5L", "presentation": "2.5L", "quantity": 8},
+      {"product": "Volt 500ml", "presentation": "500ml", "quantity": 2},
+      {"product": "Big Cola 3L", "presentation": "3L", "quantity": 1}
+    ]
   }
 ]

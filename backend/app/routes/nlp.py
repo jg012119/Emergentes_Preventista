@@ -98,7 +98,7 @@ QUANTITY_WORDS = {
 }
 
 FILLER_RE = re.compile(
-    r"^(quiero|necesito|dame|manda|mandame|mandale|agrega|agregame|agregar|pedir|pedido|por favor|me das|ponme|seria|anotame|pasame|dejame|llevame|despachame)\b\s*",
+    r"^(quiero|necesito|dame|manda|mandame|mandale|agrega|agregame|agregar|pedir|pedido|por favor|me das|me manda|ponme|seria|anotame|pasame|dejame|llevame|despachame|ehhh|ehh|eh|este|a ver|entonces|bueno|buena|oye|nomas|eso nomas|después|despues|hola buenas|hola|buenas)\b\s*",
     re.IGNORECASE,
 )
 ORDER_INTENT_RE = re.compile(
@@ -259,8 +259,18 @@ TYPO_REPLACEMENTS = (
     (r"\bbolt\b", "volt"),
     (r"\bbol\b", "volt"),
     (r"\bpulpp\b", "pulp"),
-    (r"\bbigg\b", "big"),
     (r"\bbik\b", "big"),
+    (r"\bbigg\b", "big"),
+    # ASR-typical errors
+    (r"\bcocacola\b", "coca cola"),
+    (r"\bbigcola\b", "big cola"),
+    (r"\baguacielo\b", "agua cielo"),
+    (r"\bfreetea\b", "free tea"),
+    (r"\besporate\b", "sporade"),
+    (r"\besporade\b", "sporade"),
+    (r"\bsporad\b", "sporade"),
+    (r"\bcoquita\b", "coca cola"),
+    (r"\bcoquitas\b", "coca cola"),
 )
 
 

@@ -20,6 +20,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { confirmOrder, getChat, getGeneralChat, rateChatMessage, sendMessage } from '../services/api';
 import { colors as C } from '../theme';
 import { GradientScreen } from '../components/ScreenBackground';
+import VoiceNoteBubble from '../components/VoiceNoteBubble';
 
 const INTRO_MESSAGE = {
   id: 'intro-message',
@@ -89,8 +90,22 @@ const SHORT_CLARIFICATION_RE = /^\s*(si|sí|ok|okay|dale|correcto|esa|ese|eso|\d
 const parseMessageParts = (message) => {
   const actions = [];
   const visibleLines = [];
+  let isVoice = false;
+  let voiceText = '';
+  let voiceDuration = 0;
 
-  String(message || '').split('\n').forEach((line) => {
+  let messageToParse = message;
+  try {
+    const jsonParsed = JSON.parse(message);
+    if (jsonParsed && jsonParsed.is_voice) {
+      isVoice = true;
+      voiceText = jsonParsed.text || '';
+      voiceDuration = jsonParsed.duration || 5;
+      messageToParse = jsonParsed.text || '';
+    }
+  } catch (_) {}
+
+  String(messageToParse || '').split('\n').forEach((line) => {
     const trimmed = line.trim();
     if (trimmed.startsWith(CHAT_ACTION_PREFIX)) {
       try {
@@ -104,7 +119,13 @@ const parseMessageParts = (message) => {
     visibleLines.push(line);
   });
 
-  return { text: visibleLines.join('\n').trim(), actions };
+  return {
+    text: visibleLines.join('\n').trim(),
+    actions,
+    isVoice,
+    voiceText,
+    voiceDuration
+  };
 };
 
 const findActiveDraftOrderId = (messages) => {
@@ -183,6 +204,7 @@ export default function ChatScreen({ route, navigation }) {
   const lastTranscriptRef = useRef('');
   const autoInterpretRef = useRef(false);
   const autoSendLockedRef = useRef(false);
+  const voiceStartRef = useRef(0);
   const insets = useSafeAreaInsets();
 
   const scrollToBottom = useCallback(() => {
@@ -296,7 +318,7 @@ export default function ChatScreen({ route, navigation }) {
     };
   }, [scrollToBottom]);
 
-  const sendTextMessage = useCallback(async (rawText) => {
+  const sendTextMessage = useCallback(async (rawText, voiceOptions = null) => {
     const clean = String(rawText || '').trim();
     if (!clean || sending) return;
     const transportOrderId = isOrderChat ? orderId : null;
@@ -307,11 +329,20 @@ export default function ChatScreen({ route, navigation }) {
       pending_order_text: contextPendingOrderText || null,
     };
 
+    // Construir mensaje final: si es de voz, codificar como JSON
+    const finalMessage = voiceOptions && voiceOptions.isVoice
+      ? JSON.stringify({
+          is_voice: true,
+          text: clean,
+          duration: Math.max(1, Math.round(voiceOptions.duration || 5))
+        })
+      : clean;
+
     const optimistic = {
       id: `local-${Date.now()}`,
       order_id: transportOrderId,
       sender: 'user',
-      message: clean,
+      message: finalMessage,
       created_at: new Date().toISOString(),
     };
 
@@ -335,7 +366,7 @@ export default function ChatScreen({ route, navigation }) {
 
       const saved = await sendMessage({
         order_id: transportOrderId,
-        message: clean,
+        message: finalMessage,
         sender: 'user',
         context: messageContext,
       });
@@ -391,10 +422,11 @@ export default function ChatScreen({ route, navigation }) {
       speech.addListener('end', () => {
         setRecognizing(false);
         const transcript = lastTranscriptRef.current.trim();
+        const durationSeconds = voiceStartRef.current ? Math.max(1, (Date.now() - voiceStartRef.current) / 1000) : 5;
         if (autoInterpretRef.current && transcript && !autoSendLockedRef.current) {
           autoSendLockedRef.current = true;
           setVoiceHint('Interpretando pedido...');
-          sendTextMessage(transcript, { interpret: true }).finally(() => {
+          sendTextMessage(transcript, { isVoice: true, duration: durationSeconds }).finally(() => {
             autoInterpretRef.current = false;
             autoSendLockedRef.current = false;
             setVoiceHint('');
@@ -614,6 +646,7 @@ export default function ChatScreen({ route, navigation }) {
       }
 
       lastTranscriptRef.current = '';
+      voiceStartRef.current = Date.now();
       autoInterpretRef.current = true;
       autoSendLockedRef.current = false;
       setText('');
@@ -728,7 +761,11 @@ export default function ChatScreen({ route, navigation }) {
             const parsed = parseMessageParts(item.message);
             return (
               <View style={[s.bubble, isUser ? s.userBubble : s.agentBubble, item.failed && s.failedBubble]}>
-                {parsed.text ? <Text style={s.messageText}>{parsed.text}</Text> : null}
+                {parsed.isVoice ? (
+                  <VoiceNoteBubble text={parsed.voiceText} duration={parsed.voiceDuration} isUser={isUser} />
+                ) : (
+                  parsed.text ? <Text style={s.messageText}>{parsed.text}</Text> : null
+                )}
                 {parsed.actions.length ? (
                   <View style={[s.messageActions, !parsed.text && s.messageActionsOnly]}>
                     {parsed.actions.map((action, index) => {

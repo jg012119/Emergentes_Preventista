@@ -35,8 +35,8 @@ from app.models.schemas import LlamaIntent
 DATASET_PATH = Path(__file__).parent.parent / "app" / "nlp_dataset" / "cochabamba_cercado_orders.json"
 BASE_MODEL   = "llama3.1:8b"
 OUTPUT_MODEL = "aje-preventista"
-EPOCHS       = 4
-EVAL_SAMPLE  = 20   # evaluados por época
+EPOCHS       = 2
+EVAL_SAMPLE  = 30   # evaluados por época
 
 MOCK_PRODUCTS = [
     {"id": "1",  "name": "Big Cola 3L",      "price": 12.00, "stock": 200},
@@ -445,6 +445,73 @@ FEW_SHOT_CONVERSATIONS = [
             "mensaje_libre": None
         }, ensure_ascii=False),
     },
+    {
+        "user": "chico",
+        "assistant": json.dumps({
+            "intencion": "aclaracion", "confianza": 0.88,
+            "motivo_rechazo": None, "productos": [],
+            "fecha_entrega": None, "requiere_aclaracion": False, "pregunta_aclaracion": None,
+            "mensaje_libre": None
+        }, ensure_ascii=False),
+    },
+    {
+        "user": "el de dos litros",
+        "assistant": json.dumps({
+            "intencion": "aclaracion", "confianza": 0.89,
+            "motivo_rechazo": None, "productos": [],
+            "fecha_entrega": None, "requiere_aclaracion": False, "pregunta_aclaracion": None,
+            "mensaje_libre": None
+        }, ensure_ascii=False),
+    },
+    {
+        "user": "de tres litros",
+        "assistant": json.dumps({
+            "intencion": "aclaracion", "confianza": 0.87,
+            "motivo_rechazo": None, "productos": [],
+            "fecha_entrega": None, "requiere_aclaracion": False, "pregunta_aclaracion": None,
+            "mensaje_libre": None
+        }, ensure_ascii=False),
+    },
+    # ── TRANSCRIPCIONES DE VOZ (sin puntuación, vacilaciones, coloquiales) ──
+    {
+        "user": "ehhh quiero free tea de medio litro tres unidades para mañana",
+        "assistant": json.dumps({
+            "intencion": "pedido", "confianza": 0.97, "motivo_rechazo": None,
+            "productos": [{"texto_original": "free tea de medio litro tres unidades", "nombre_detectado": "Free Tea", "cantidad": 3, "presentacion": "500ml", "sku_sugerido": "Free Tea 500ml", "requiere_aclaracion": False}],
+            "fecha_entrega": "tomorrow", "requiere_aclaracion": False, "pregunta_aclaracion": None, "mensaje_libre": None
+        }, ensure_ascii=False),
+    },
+    {
+        "user": "hola me das cuatro big cola de tres litros para hoy por favor",
+        "assistant": json.dumps({
+            "intencion": "pedido", "confianza": 0.98, "motivo_rechazo": None,
+            "productos": [{"texto_original": "cuatro big cola de tres litros", "nombre_detectado": "Big Cola", "cantidad": 4, "presentacion": "3L", "sku_sugerido": "Big Cola 3L", "requiere_aclaracion": False}],
+            "fecha_entrega": "today", "requiere_aclaracion": False, "pregunta_aclaracion": None, "mensaje_libre": None
+        }, ensure_ascii=False),
+    },
+    {
+        "user": "bueno entonces dame cuatro big cola de 500 y seis oro chico",
+        "assistant": json.dumps({
+            "intencion": "pedido", "confianza": 0.96, "motivo_rechazo": None,
+            "productos": [
+                {"texto_original": "cuatro big cola de 500", "nombre_detectado": "Big Cola", "cantidad": 4, "presentacion": "500ml", "sku_sugerido": "Big Cola 500ml", "requiere_aclaracion": False},
+                {"texto_original": "seis oro chico", "nombre_detectado": "Oro", "cantidad": 6, "presentacion": "500ml", "sku_sugerido": "Oro 500ml", "requiere_aclaracion": False}
+            ],
+            "fecha_entrega": None, "requiere_aclaracion": False, "pregunta_aclaracion": None, "mensaje_libre": None
+        }, ensure_ascii=False),
+    },
+    {
+        "user": "a ver ponme dos big de dos y tres cifrut de litro y un volt grande para hoy",
+        "assistant": json.dumps({
+            "intencion": "pedido", "confianza": 0.95, "motivo_rechazo": None,
+            "productos": [
+                {"texto_original": "dos big de dos", "nombre_detectado": "Big Cola", "cantidad": 2, "presentacion": "2L", "sku_sugerido": "Big Cola 2L", "requiere_aclaracion": False},
+                {"texto_original": "tres cifrut de litro", "nombre_detectado": "Cifrut", "cantidad": 3, "presentacion": "1L", "sku_sugerido": "Cifrut 1L", "requiere_aclaracion": False},
+                {"texto_original": "un volt grande", "nombre_detectado": "Volt", "cantidad": 1, "presentacion": "500ml", "sku_sugerido": "Volt 500ml", "requiere_aclaracion": False}
+            ],
+            "fecha_entrega": "today", "requiere_aclaracion": False, "pregunta_aclaracion": None, "mensaje_libre": None
+        }, ensure_ascii=False),
+    },
 ]
 
 
@@ -523,11 +590,13 @@ NO eres un chatbot libre. SOLO extraes intenciones y productos de mensajes de pr
 4. Comida sólida (papas/nachos/pizza/galletas/snack/hamburguesa): intencion="fuera_de_alcance", motivo_rechazo="comida_solida"
 5. Si el usuario saluda: intencion="saludo"
 6. Si pide ver el menú o catálogo: intencion="consulta_catalogo"
-7. Si pide ver sus pedidos: intencion="listar_pedidos"
-8. Si pregunta el estado de un pedido: intencion="estado_pedido"
+7. Si pide ver todos sus pedidos, historial o pedidos pendientes: intencion="listar_pedidos" (ej. "muéstrame mis pedidos pendientes", "qué pedidos tengo").
+8. Si pregunta específicamente por el estado, ubicación o seguimiento de un pedido actual: intencion="estado_pedido" (ej. "cómo va mi pedido?", "dónde está mi entrega?").
 9. Si confirma ("sí"/"dale"/"ok"/"listo"/"confirmo"): intencion="confirmacion"
 10. Si niega ("no"/"cancelar"/"no gracias"): intencion="negacion"
-11. Si responde con una presentación ("de litro"/"la de 500"): intencion="aclaracion"
+11. Si el mensaje es una aclaración corta que indica una presentación, volumen o respuesta a una pregunta de tamaño (ej. "de litro", "la de 500", "el de dos litros", "de tres litros", "chico", "el grande", "mediano"):
+    - Si el mensaje contiene verbos de pedido (como "quiero", "dame", "manda", "ponme", "trae", "agrega") o marcas/productos del catálogo (como "big", "cola", "cielo", "volt", "oro", "cifrut", "pulp", "free tea", "sporade", "agua"), entonces NUNCA es una aclaración simple, sino un pedido completo. Clasifícalo como intencion="pedido" y extrae el producto.
+    - Si NO contiene esos verbos ni marcas, y es solo la frase de tamaño/volumen: establece intencion="aclaracion" y deja la lista de productos vacía (productos=[]), y NO intentes crear un producto con nombre "litro" o similar.
 12. Si la presentación es ambigua, marca requiere_aclaracion=true en ese producto.
 13. "familiar" / "grande" ≈ 2L. "chico" / "personal" / "chika" ≈ 500ml. "litro" = 1L.
 14. "cielito" = Agua Cielo 500ml. "voltcito" = Volt 300ml. "orito" = Oro 500ml. "pulpito" = Pulp 300ml.
@@ -721,10 +790,12 @@ async def main():
         print(color(f"  ÉPOCA {epoch}/{EPOCHS}", BOLD))
         print(color(f"{'═'*54}", CYAN))
 
-        # Incrementar ejemplos: 50% → 65% → 80% → 100%
-        pct = 0.50 + (epoch - 1) * 0.17
+        # Incrementar ejemplos: 50% → 100%
+        pct = 0.50 + (epoch - 1) * 0.50
         n_examples = min(len(conversations), max(20, int(len(conversations) * pct)))
-        sample_eval = min(EVAL_SAMPLE + (epoch - 1) * 5, len(conversations))
+        
+        # Evaluar ambas épocas en la muestra completa para comparación justa
+        sample_eval = min(EVAL_SAMPLE, len(conversations))
 
         print(f"  Ejemplos en Modelfile  : {n_examples}")
         print(f"  Muestras de evaluación : {sample_eval}")
@@ -742,10 +813,10 @@ async def main():
         all_metrics.append(metrics)
         print_metrics(metrics)
 
-        # ── Stop early si ya superamos el objetivo ──
-        if metrics["intent_accuracy"] >= 92 and metrics["product_hit_rate"] >= 88:
-            print(color(f"\n  🎯 Objetivo superado en época {epoch}! Deteniendo.", GREEN))
-            break
+        # ── Deshabilitado early stopping para entrenar al máximo y evaluar todas las épocas ──
+        # if metrics["intent_accuracy"] >= 92 and metrics["product_hit_rate"] >= 88:
+        #     print(color(f"\n  🎯 Objetivo superado en época {epoch}! Deteniendo.", GREEN))
+        #     break
 
     # 4. Resumen
     print(color(f"\n{'═'*54}", MAGENTA))
@@ -770,7 +841,8 @@ async def main():
 
     # 5. Crear modelo final
     best_epoch = best["epoch"]
-    best_n = min(len(conversations), max(20, int(len(conversations) * (0.50 + (best_epoch - 1) * 0.17))))
+    step_coef = (1.0 - 0.50) / (EPOCHS - 1) if EPOCHS > 1 else 0
+    best_n = min(len(conversations), max(20, int(len(conversations) * (0.50 + (best_epoch - 1) * step_coef))))
     print(color(f"\n🏆 Creando modelo final '{OUTPUT_MODEL}' con {best_n} ejemplos (época {best_epoch})...", BOLD))
 
     final_modelfile = build_modelfile(conversations[:best_n], epoch=best_epoch)
