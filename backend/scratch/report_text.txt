@@ -1,0 +1,285 @@
+Proyecto de Fin de Módulo: Arquitectura e
+Implementación del Agente Inteligente
+Institución: Universidad Privada del Valle (UNIVALLE) Cochabamba
+Carrera: Ingeniería de Sistemas Informáticos
+Materia: Inteligencia Artificial / Sistemas Expertos
+Docente Evaluador: Ing. Claudia Ureña Hinojosa
+Desarrolladores: Luz Esmeralda Hinojosa Laredo, Jairo Guzmán, Valentina Trigo
+
+1. Reporte de Agente Inteligente
+El componente central de automatización del sistema se define como un agente inteligente híbrido
+diseñado para optimizar el canal de preventistas de AJE Bolivia. Su función principal radica en la
+interceptación, análisis lingüístico y estructuración semántica de cadenas de texto libre e inputs de
+lenguaje natural originados desde la aplicación de mensajería del cliente. El agente procesa de
+forma autónoma estos datos desestructurados y los transforma en transacciones válidas para el
+inventario de la empresa.
+Para garantizar una alta disponibilidad, mitigar la latencia de respuesta en la red corporativa y
+eliminar costos operativos redundantes de APIs comerciales de terceros, el agente se ha
+estructurado bajo un modelo de Arquitectura en Cascada de Tres Capas Secuenciales:
+• Capa 1: Motor de Reglas y Algoritmos de Similitud Léxica (NLP Determinista): Funciona
+como la primera línea de procesamiento. Ejecuta análisis sintáctico inmediato mediante
+emparejamiento difuso utilizando la librería rapidfuzz. Esta capa está calibrada para
+identificar de forma exacta o aproximada marcas, SKUs, unidades de medida y volúmenes de
+envases en un intervalo menor a 100 milisegundos, absorbiendo más del 85% del tráfico de
+solicitudes estándar sin requerir procesamiento de cómputo avanzado.
+• Capa 2: Procesamiento del Lenguaje Natural mediante LLM Local (Fallback
+Probabilístico): En escenarios donde la sintaxis del usuario carece de estructura predictiva
+(uso intensivo de modismos, ambigüedades contextuales o desorden de datos), la Capa 1
+delega el payload a un Modelo de Lenguaje de Gran Escala (LLM). Se implementó un modelo
+optimizado Llama 3.1 (8B) desplegado localmente mediante la infraestructura de Ollama.
+Este modelo corre bajo un sub-perfil customizado con instrucciones de sistema rígidas
+(System Prompts) orientadas a la extracción exclusiva de entidades comerciales.
+• Capa 3: Subsistema Hardcoded de Contingencia y Auxilio Dinámico: Diseñado bajo el
+principio de tolerancia a fallos. Si se interrumpe la comunicación con el contenedor local de IA
+
+Ingeniería de Sistemas • UNIVALLE
+
+Página 1 de 5
+
+o se excede el umbral de tiempo límite de respuesta (timeout) fijado en 3.5 segundos, el
+agente activa un protocolo de recuperación que envía un árbol de decisiones en texto plano al
+usuario final para guiarlo a estructurar su pedido de forma manual.
+
+2. Implementación del Agente
+La implementación del backend se realizó sobre la arquitectura asíncrona de FastAPI en Python
+3.11, permitiendo un manejo concurrente eficiente de los hilos de mensajería. El código fuente ha
+sido modularizado y desacoplado de acuerdo con las mejores prácticas de la ingeniería de
+software en los siguientes componentes del repositorio:
+
+Módulo / Archivo
+
+Responsabilidad Técnica y Algorítmica
+
+Líneas de
+Código
+
+Orquestador de tuberías de datos (Data
+chat.py
+
+Pipelines). Controla el flujo condicional de
+las capas y la inyección de estados en la
+
+612
+
+sesión activa del preventista.
+Núcleo de normalización textual.
+nlp.py
+
+Implementa algoritmos de distancia de
+Levenshtein, remoción de stop-words y
+
+2,174
+
+tokenización de cadenas comerciales.
+Abstracción de interfaz con la API local de
+Ollama. Gestiona la temperatura del
+llm.py
+
+modelo (configurada en 0.0 para
+garantizar respuestas deterministas) y
+
+198
+
+valida que el output cumpla con el
+esquema JSON requerido.
+Base de conocimientos local estructurada
+cochabamba_cercado_orders.json
+
+para el entrenamiento ligero y validación
+estática del vocabulario regional del
+
+520
+
+mercado de Cochabamba.
+
+Mecanismo de Limpieza Difusa (Fuzzy Matching)
+El procesamiento dentro de nlp.py somete el string de entrada a un pipeline de desinfectado:
+conversión a minúsculas, eliminación de caracteres especiales, acentos y truncado de palabras
+
+Ingeniería de Sistemas • UNIVALLE
+
+Página 2 de 5
+
+vacías. Posteriormente, se aplica el análisis de similitud basado en el ratio parcial de la librería
+rapidfuzz. Los límites operativos configurados son:
+1. Score ≥ 90%: Validación automática e inyección directa al carrito transaccional.
+2. 70% ≤ Score < 89%: Clasificación como coincidencia aproximada sospechosa. El producto se
+pre-selecciona pero se levanta un flag de verificación visual.
+3. Score < 70%: Rechazo léxico y redirección del token hacia la Capa 2 (LLM).
+
+3. Pruebas Realizadas y Evaluación Métrica
+Para validar la fiabilidad de la solución, se corrió una suite corporativa automatizada compuesta
+por un banco de pruebas de 74 expresiones de usuarios simulados recolectadas en el dataset
+regional. Los vectores de prueba cubrieron variables de ruido léxico, errores tipográficos severos y
+variaciones contextuales complejas. El agente alcanzó un índice de **precisión del 100%
+(Accuracy: 1.0)** en la categorización de entidades y cubicaje de pedidos dentro del entorno
+controlado de testing.
+
+Muestra de Resultados de la Suite de Calibración
+
+ID
+
+Hilera de Entrada (Raw String)
+
+01
+
+"mandame 3 sielitos de litro"
+
+02
+
+"quiero 5 big cola familiar"
+
+05
+
+"hola, buenas tardes"
+
+06
+
+"¿qué tienes fresco?"
+
+12
+
+13
+
+"deme 2 orito para el viernes"
+
+"confirmar"
+
+Ingeniería de Sistemas • UNIVALLE
+
+Clasificación de
+
+Entidad Extraída / Estado
+
+Entrada
+
+Resultante
+
+Variación Ortográfica
+
+Agua Cielo 1000ml
+
+Compleja
+
+[Cant: 3]
+
+Sintaxis Comercial
+
+Big Cola 2000ml
+
+Estándar
+
+[Cant: 5]
+
+Interacción Social /
+
+Mensaje de Bienvenida
+
+Saludo
+
+Protocolar
+
+Solicitud de
+
+Despliegue Dinámico del
+
+Información
+
+Portafolio
+
+Modismo Regional +
+Temporalidad
+
+Orito Saborizado
+[Cant: 2] (Despacho
+Programado)
+
+Inyección de Comando
+
+Transición de Estado:
+
+Directo
+
+Borrador → Confirmado
+
+Página 3 de 5
+
+4. Criterios de Aceptación y Rechazos
+El gobierno de datos del agente inteligente cuenta con reglas restrictivas que definen las fronteras
+operativas del sistema, impidiendo desviaciones en las intenciones de compra mediante
+interceptores de tokens específicos:
+• Políticas de Exclusión de Alcohol: La detección de cualquier raíz lingüística asociada a
+productos embriagantes (ej. "cerveza", "vino", "fernet", "chela") activa una interrupción
+inmediata en la Capa 1. El agente devuelve un rechazo sanitizado impidiendo la alteración de
+las órdenes del inventario de bebidas no alcohólicas de AJE.
+• Políticas de Exclusión de Productos Sólidos: Si las intenciones de compra incluyen comida
+o snacks (ej. "papas fritas", "chizitos", "galletas"), el agente inteligente limpia el carrito de
+compra y emite una alerta indicando la incompatibilidad logística del catálogo.
+• Gestión de Ambigüedad General: Las solicitudes abstractas o consultas fuera del dominio
+de la empresa son evaluadas por el prompt restrictivo de la Capa 2 para reconducir al usuario
+hacia la operación comercial autorizada.
+Patrón de Diseño Arquitectónico - Validación Humana Intermedia (Human-in-the-loop): Como
+salvaguarda de seguridad crítica frente al fenómeno de alucinación informática en los LLMs, el agente
+inteligente tiene estrictamente prohibido asentar registros finales en la base de datos de producción de
+forma autónoma. El sistema genera un estado intermedio inmutable llamado Borrador de Pedido
+(Draft), el cual expone un desglose detallado de precios y cantidades en la UI del cliente. La
+transacción requiere la aprobación física y explícita del usuario mediante un webhook antes de su
+consolidación final en el módulo ERP.
+
+5. Evidencias de Ejecución Semántica
+A continuación se expone el log técnico de entrada/salida que demuestra el comportamiento
+síncrono del servidor FastAPI durante la interpretación exitosa de una orden de compra
+desestructurada con errores léxicos:
+[DEBUG LOG - SERVER INCOMING REQUEST]
+Timestamp: 2026-06-14T17:51:19.412Z
+Payload Recibido: "Quiero 4 Coca-Colas y 2 paquetes de Bolt para el viernes."
+Pipeline Exec: Layer_1 (Fuzzy) completed in 0.042s. Score match identified.
+[RESPONSE SCHEMA - OUTPUT GENERATED (200 OK)]
+{
+"status": "success",
+"timestamp": "2026-06-14T17:51:19.454Z",
+
+Ingeniería de Sistemas • UNIVALLE
+
+Página 4 de 5
+
+"action": "@@create_draft_order",
+"execution_layer": "LAYER_1_DETERMINISTIC",
+"data": {
+"productos_detectados": [
+{
+"sku": "COCA-500ML",
+"nombre_comercial": "Coca-Cola Original Personal",
+"cantidad": 4,
+"precio_unitario": 5.00
+},
+{
+"sku": "BOLT-PACK-6U",
+"nombre_comercial": "Energizante Volt Paquete 6 Unidades",
+"cantidad": 2,
+"precio_unitario": 18.00
+}
+],
+"metadatos_logisticos": {
+"fecha_sugerida_entrega": "2026-06-19",
+"dia_semana": "Viernes",
+"zona_distribucion": "Cercado - Cochabamba"
+},
+"liquidacion_economica": {
+"moneda": "Bob",
+"subtotal_neto": 56.00,
+"impuestos_incluidos": 0.00,
+"total_bolivianos": "Bs. 56.00"
+},
+"requiere_confirmacion_humana": true
+},
+"mensaje_agente": "¡Listo! Ya armé el borrador de tu pedido por un total de
+de Bs. 56.00. Por favor, revísalo detalladamente en tu pantalla y presiona el
+botón de confirmar para agendar su despacho."
+}
+
+Ingeniería de Sistemas • UNIVALLE
+
+Página 5 de 5
+
+

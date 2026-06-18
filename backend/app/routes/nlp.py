@@ -340,10 +340,62 @@ def _match_variants(value: str | None) -> set[str]:
     return variants
 
 
+_PRESENTATION_MAP: dict[str, str] = {
+    # Volt specific
+    "volt chico": "300ml",
+    "voltcito": "300ml",
+    "volt grande": "500ml",
+    "volt mediano": "500ml",
+    
+    # Coca-Cola specific
+    "coca chica": "500ml",
+    "coca chiquita": "500ml",
+    "coca personal": "500ml",
+    "coquita": "500ml",
+    "coca grande": "2L",
+    "coca familiar": "2L",
+    
+    # Agua Cielo specific
+    "agua chica": "500ml",
+    "agua chiquita": "500ml",
+    "agua personal": "500ml",
+    "agua grande": "2.5L",
+    "agua familiar": "2.5L",
+
+    # General qualitative terms
+    "chico": "500ml",
+    "chica": "500ml",
+    "chika": "500ml",
+    "chiquito": "500ml",
+    "chiquita": "500ml",
+    "personal": "500ml",
+    "pequeño": "500ml",
+    "pequeña": "500ml",
+    "medio litro": "500ml",
+    "un litro y medio": "1.5L",
+    "litro y medio": "1.5L",
+    "un litro": "1L",
+    "litro": "1L",
+    "mediano": "1L",
+    "grande": "2L",
+    "familiar": "2L",
+    "dos litros": "2L",
+    "super grande": "3L",
+    "tres litros": "3L",
+}
+
+
 def _canonical_presentation(value: str | None) -> str | None:
+    if not value:
+        return None
     normalized = _normalize(value)
     for pattern, replacement in TYPO_REPLACEMENTS:
         normalized = re.sub(pattern, replacement, normalized)
+
+    # Check qualitative map first on word boundaries
+    for key in sorted(_PRESENTATION_MAP.keys(), key=len, reverse=True):
+        if re.search(rf"\b{re.escape(key)}\b", normalized):
+            return _PRESENTATION_MAP[key]
 
     match = PRESENTATION_RE.search(normalized)
     if not match:
@@ -513,7 +565,15 @@ def _item_fragment(segment: str) -> str:
     info = _quantity_info(segment)
     if info:
         _, start, _end = info
-        return " ".join(segment.split()[start:])
+        tokens = segment.split()
+        has_non_filler = False
+        for token in tokens[:start]:
+            normalized_token = token.lower().strip(".,!?()-\"'/")
+            if not FILLER_RE.match(normalized_token) and normalized_token not in NO_PRODUCT_SIGNAL_TOKENS:
+                has_non_filler = True
+                break
+        if not has_non_filler:
+            return " ".join(tokens[start:])
     return segment
 
 
@@ -851,10 +911,16 @@ def _validation_for_items(items: list[NLPParsedOrderItem], delivery_date: str | 
                 if candidate.score * 100 >= CONFIRM_SCORE
             ][:3]
             needs_presentation = _needs_presentation_clarification(item, options)
-            labels = " o ".join(
-                str(candidate.get("presentation") or candidate.get("product") or "producto")
-                for candidate in options
-            )
+            if needs_presentation:
+                labels = " o ".join(
+                    str(candidate.get("presentation") or "producto")
+                    for candidate in options
+                )
+            else:
+                labels = " o ".join(
+                    str(candidate.get("product") or "producto")
+                    for candidate in options
+                )
             family = _product_family(top.product).title() or str(top.product or "producto")
             questions.append(NLPClarificationQuestion(
                 type="presentation" if needs_presentation else "sku",
@@ -1565,6 +1631,7 @@ def _draft_order_payload(
     user_id: str,
     requested_store_id: str | None = None,
     persist: bool = True,
+    default_delivery_date: str | None = None,
 ) -> NLPDraftOrderResponse:
     parsed = _parse_order_payload(
         db,
@@ -1573,6 +1640,7 @@ def _draft_order_payload(
         requested_store_id=requested_store_id,
         persist=persist,
         require_store=True,
+        default_delivery_date=default_delivery_date,
     )
 
     draft_response = NLPDraftOrderResponse(
@@ -1706,20 +1774,145 @@ def _is_valid_clarification_reply_for_pending(text: str, pending: dict[str, Any]
     return True
 
 
+def _get_pending_product_name(pending: dict[str, Any]) -> str | None:
+    text = pending.get("question_text", "")
+    if pending.get("question_type") == "quantity":
+        if "de " in text:
+            prod = text.split("de ")[-1].replace("?", "").strip()
+            return prod
+    elif pending.get("question_type") in ("presentation", "sku", "product"):
+        options = pending.get("options") or []
+        if options:
+            return options[0].get("product") or options[0].get("name")
+        if "de " in text:
+            prod = text.split("de ")[-1].replace("?", "").strip()
+            if ":" in prod:
+                prod = prod.split(":")[0].strip()
+            return prod
+    return None
+
+
+def _clarification_matches_segment(pending: dict[str, Any], segment: str) -> bool:
+    prod_name = _get_pending_product_name(pending)
+    if not prod_name:
+        return False
+    
+    brand1 = _get_brand_keywords(prod_name)
+    brand2 = _get_brand_keywords(segment)
+    if brand1 and brand2:
+        if brand1 & brand2:
+            return True
+            
+    norm1 = _normalize(prod_name)
+    norm2 = _normalize(segment)
+    clean2 = _remove_quantity(norm2)
+    
+    words1 = set(norm1.split())
+    words2 = set(clean2.split())
+    significant_words1 = {w for w in words1 if len(w) >= 3 and w not in NO_PRODUCT_SIGNAL_TOKENS}
+    significant_words2 = {w for w in words2 if len(w) >= 3 and w not in NO_PRODUCT_SIGNAL_TOKENS}
+    if significant_words1 & significant_words2:
+        return True
+        
+    return False
+
+
 def _matching_pending_clarification(
     db,
     *,
     user_id: str,
     text: str,
 ) -> tuple[dict[str, Any], str] | tuple[None, None]:
-    for pending in _last_pending_clarifications(db, user_id=user_id):
-        if not _is_valid_clarification_reply_for_pending(text, pending):
-            continue
-        enriched = _interpret_clarification_reply(
-            db, text=text, clarification=pending,
-        )
-        if enriched:
-            return pending, enriched
+    pendings = _last_pending_clarifications(db, user_id=user_id)
+    if not pendings:
+        return None, None
+
+    if len(pendings) == 1:
+        pending = pendings[0]
+        if _is_valid_clarification_reply_for_pending(text, pending):
+            enriched = _interpret_clarification_reply(
+                db, text=text, clarification=pending,
+            )
+            if enriched:
+                return pending, enriched
+        return None, None
+
+    # Multiple pending clarifications - attempt segment matching
+    segments = _split_order_segments(text)
+    resolved_parts = []
+    matched_events = []
+
+    for segment in segments:
+        matched_pending = None
+        for pending in pendings:
+            if pending.get("id") in [e.get("id") for e in matched_events]:
+                continue
+            if _clarification_matches_segment(pending, segment):
+                matched_pending = pending
+                break
+        
+        # Fallback: match by question type for pure values (presentation, quantity, date)
+        if not matched_pending:
+            for pending in pendings:
+                if pending.get("id") in [e.get("id") for e in matched_events]:
+                    continue
+                q_type = pending.get("question_type", "")
+                if q_type in ("presentation", "sku"):
+                    options = pending.get("options") or []
+                    if _match_presentation_option(segment, options) or _match_option_by_index(segment, options):
+                        matched_pending = pending
+                        break
+                elif q_type == "quantity":
+                    norm_seg = _normalize(segment)
+                    if norm_seg.isdigit() or norm_seg in QUANTITY_WORDS:
+                        matched_pending = pending
+                        break
+                elif q_type == "date" and _extract_delivery_date(segment):
+                    matched_pending = pending
+                    break
+
+        if matched_pending:
+            matched_events.append(matched_pending)
+            question_type = matched_pending.get("question_type", "")
+            
+            if question_type == "quantity":
+                qty = _parse_quantity(segment)
+                prod_name = _get_pending_product_name(matched_pending)
+                resolved_parts.append(f"{qty} {prod_name}")
+            elif question_type in ("presentation", "sku", "product"):
+                options = matched_pending.get("options") or []
+                matched_opt = _match_presentation_option(segment, options)
+                if not matched_opt:
+                    matched_opt = _match_option_by_index(segment, options)
+                if matched_opt:
+                    interaction_id = matched_pending.get("interaction_id")
+                    has_pending_quantity = any(
+                        p.get("interaction_id") == interaction_id and p.get("question_type") == "quantity"
+                        for p in pendings
+                        if p.get("id") != matched_pending.get("id")
+                    )
+                    if _quantity_detected(segment):
+                        qty = _parse_quantity(segment)
+                        resolved_parts.append(f"{qty} {matched_opt.get('product', '')}")
+                    elif has_pending_quantity:
+                        resolved_parts.append(matched_opt.get("product", ""))
+                    else:
+                        qty = 1
+                        resolved_parts.append(f"{qty} {matched_opt.get('product', '')}")
+                else:
+                    resolved_parts.append(segment)
+            else:
+                resolved_parts.append(segment)
+        else:
+            resolved_parts.append(segment)
+
+    if matched_events and resolved_parts:
+        for pending in matched_events:
+            _resolve_clarification(db, pending.get("id", ""), text)
+        
+        enriched_text = " y ".join(resolved_parts)
+        return matched_events[0], enriched_text
+
     return None, None
 
 
@@ -2119,12 +2312,33 @@ def draft_order_chat_reply(
                     )
                     return _draft_detail_message(updated_order, updated=True)
 
+            interaction_id = pending.get("interaction_id")
+            original_delivery_date = None
+            if interaction_id:
+                try:
+                    interaction = (
+                        db.table("nlp_interactions")
+                        .select("extracted_json, store_id")
+                        .eq("id", interaction_id)
+                        .limit(1)
+                        .execute()
+                        .data
+                    )
+                    if interaction:
+                        ext_json = interaction[0].get("extracted_json") or {}
+                        original_delivery_date = ext_json.get("fecha_entrega")
+                        if not store_id:
+                            store_id = interaction[0].get("store_id")
+                except Exception:
+                    pass
+
             response = _draft_order_payload(
                 db,
                 text=enriched,
                 user_id=user_id,
                 requested_store_id=store_id,
                 persist=True,
+                default_delivery_date=original_delivery_date,
             )
             if response.draft_created:
                 return response.message

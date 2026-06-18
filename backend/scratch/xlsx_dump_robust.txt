@@ -1,0 +1,345 @@
+
+================================================================================
+SHEET: Portada (Zip File: xl/worksheets/sheet1.xml)
+================================================================================
+Row 001: A: PREVENTISTA INTELIGENTE AJE
+Row 004: A: PRUEBAS DE USABILIDAD ESTANDARIZADAS — MVP
+Row 007: A: ISO 9241-11 · Nielsen Heuristics · SUS (System Usability Scale)
+Row 013: A: Proyecto | D: Agente Inteligente para Recepción y Gestión de Pedidos
+Row 014: A: Empresa | D: AJE
+Row 015: A: Grupo | D: 315 WHISPER
+Row 016: A: Integrantes | D: Luz Laredo | Jairo Guzmán | Valentina Trigo
+Row 017: A: Stakeholder | D: Ing. Claudia Ureña Hinojosa
+Row 018: A: Sprint | D: Sprint 4 — Pruebas completas
+Row 019: A: Fecha | D: Junio 2026
+Row 020: A: Versión | D: 1.0
+Row 021: A: Estándares | D: ISO 9241-11:2018 | ISO/IEC 25010:2011 | Nielsen 10 Heuristics | SUS
+
+================================================================================
+SHEET: Casos de Prueba (Zip File: xl/worksheets/sheet2.xml)
+================================================================================
+Row 001: A: CASOS DE PRUEBA DE USABILIDAD — PREVENTISTA INTELIGENTE AJE
+Row 002: A: ID | B: Módulo | C: Pantalla | D: Tipo de Prueba | E: Estándar | F: Objetivo | G: Precondición | H: Tarea al usuario | I: Tiempo máximo (seg) | J: ¿Completó? | K: Tiempo real (seg) | L: Errores | M: Observaciones
+Row 003: A: PT-U-01 | B: Autenticación
+App Móvil | C: RegisterScreen | D: Tarea guiada | E: ISO 9241-11
+H1, H5, H9 | F: Verificar que el usuario puede registrarse sin asistencia | G: App instalada, sin sesión activa | H: Crea una cuenta nueva con tus datos. | J: 33/33 (100.0%)
+Row 004: A: PT-U-02 | B: Autenticación
+App Móvil | C: LoginScreen | D: Tarea guiada | E: ISO 9241-11
+H1, H4 | F: Verificar que el usuario puede iniciar sesión sin asistencia | G: Usuario registrado en el sistema | H: Inicia sesión con la cuenta que acabas de crear. | J: 33/33 (100.0%)
+Row 005: A: PT-U-03 | B: Tiendas
+App Móvil | C: CreateStoreScreen | D: Tarea guiada | E: ISO 9241-11
+H2, H6, H8 | F: Verificar que el usuario puede registrar su tienda con ubicación | G: Usuario con sesión iniciada | H: Registra tu tienda con nombre, dirección y ubicación. | J: 30/33 (90.9%)
+Row 006: A: PT-U-04 | B: Chat Pedidos
+App Móvil | C: ChatScreen | D: Tarea guiada | E: ISO 9241-11
+H1, H2, H6 | F: Verificar que el usuario puede realizar un pedido en lenguaje natural | G: Sesión activa, tienda registrada, productos en catálogo | H: Escribe en el chat: 'Quiero 5 Cielos y 3 Sporade para el viernes' | J: 25/33 (75.8%)
+Row 007: A: PT-U-05 | B: Chat Pedidos
+App Móvil | C: ChatScreen
+OrderConfirmScreen | D: Observación | E: ISO 9241-11
+H1, H3, H5 | F: Verificar que el extracto es claro y el usuario puede corregir | G: Pedido procesado, extracto visible | H: ¿Puedes explicar qué contiene el resumen? ¿Puedes corregirlo? | J: 31/33 (93.9%)
+Row 008: A: PT-U-06 | B: Chat Pedidos
+App Móvil | C: ChatScreen | D: Tarea guiada | E: ISO 9241-11
+H1, H7 | F: Verificar que el usuario puede dictar un pedido por voz | G: Sesión activa, tienda registrada, micrófono habilitado | H: Usa el micrófono y di: 'Quiero 2 Sporade y 1 Cielo para el lunes' | J: 22/33 (66.7%)
+Row 009: A: PT-U-07 | B: Historial
+App Móvil | C: OrdersScreen
+OrderDetailScreen | D: Tarea guiada | E: ISO 9241-11
+H1, H6, H8 | F: Verificar que el usuario puede consultar el estado de sus pedidos | G: Al menos un pedido confirmado en el sistema | H: Busca el pedido que hiciste y dime cuál es su estado actual. | J: 32/33 (97.0%)
+
+================================================================================
+SHEET: Evaluación Heurística (Zip File: xl/worksheets/sheet3.xml)
+================================================================================
+Row 001: A: EVALUACIÓN HEURÍSTICA — Nielsen 10 Heuristics
+Row 002: A: ESCALA DE SEVERIDAD
+Row 003: A: Severidad | C: No es un problema de usabilidad
+Row 004: C: Problema cosmético — Solo corregir si hay tiempo
+Row 005: C: Problema menor — Baja prioridad de corrección
+Row 006: C: Problema mayor — Alta prioridad, dificulta el uso
+Row 007: C: Catastrófico — Debe corregirse antes del lanzamiento
+Row 009: A: SECCIÓN A — APP MÓVIL (React Native)
+Row 010: A: ID | B: Heurística | C: Pantalla evaluada | D: Problema encontrado | E: Severidad
+(0-4) | F: Impacto | G: Recomendación de mejora | H: ¿Corregido?
+Row 011: A: EH-M-01 | B: H1 — Visibilidad del sistema | C: ChatScreen | D: El chat no muestra un indicador visual cuando el modelo de IA está procesando el texto o audio. | F: El usuario cree que no se envió la orden y presiona enviar múltiples veces. | G: Implementar un spinner de 'Procesando pedido...' en el chat. | H: Sí
+Row 012: A: EH-M-02 | B: H1 — Visibilidad del sistema | C: OrdersScreen | D: Los estados del pedido en el historial usan colores poco diferenciados (gris para varios estados). | F: Es difícil escanear rápidamente los pedidos entregados vs pendientes. | G: Utilizar verde para entregados, naranja para pendientes y rojo para cancelados. | H: Sí
+Row 013: A: EH-M-03 | B: H2 — Mundo real | C: ChatScreen | D: Errores técnicos de la BD se muestran directamente en la pantalla si falla una inserción. | F: Causa desconcierto en usuarios no técnicos. | G: Traducir códigos de error SQL a mensajes amigables al usuario. | H: Sí
+Row 014: A: EH-M-04 | B: H3 — Control del usuario | C: ChatScreen | D: No hay opción de cancelar o modificar directamente en el chat antes del extracto final. | F: El usuario tiene que terminar todo el dictado o flujo y luego corregir. | G: Agregar botones de control rápido o reconocer comando escrito como 'cancelar'. | H: Sí
+Row 015: A: EH-M-05 | B: H4 — Consistencia y estándares | C: General | D: Inconsistencia en la tipografía y estilo de botones primarios entre distintas pantallas de la app. | F: Aspecto visual menos pulido y profesional. | G: Estandarizar componentes de UI en base a una guía de diseño centralizada. | H: Sí
+Row 016: A: EH-M-06 | B: H5 — Prevención de errores | C: RegisterScreen | D: El registro permite contraseñas cortas sin alertar al usuario hasta que presiona Registrar. | F: Molestia por tener que reescribir datos tras una validación tardía. | G: Añadir validaciones visuales en tiempo real para longitud y caracteres de la contraseña. | H: Sí
+Row 017: A: EH-M-07 | B: H5 — Prevención de errores | C: CreateStoreScreen | D: Se permite guardar una tienda sin haber marcado correctamente la geolocalización en el mapa. | F: Registro inútil de tiendas sin ubicación geográfica precisa. | G: Hacer obligatorio el pin de ubicación antes de habilitar el botón Guardar. | H: Sí
+Row 018: A: EH-M-08 | B: H6 — Reconocimiento sobre recuerdo | C: HomeScreen | D: La pantalla de inicio está cargada de banners y opciones secundarias confusas. | F: Dificulta encontrar el botón principal de 'Nuevo Pedido'. | G: Simplificar la Home priorizando las acciones clave para el preventista. | H: Sí
+Row 019: A: EH-M-09 | B: H8 — Diseño estético y minimalista | C: ChatScreen | D: La fuente de los mensajes del chat es pequeña (12px) y el contraste con el fondo es bajo. | F: Dificultad de lectura en exteriores con luz solar. | G: Aumentar a 15px con color de texto de alto contraste (DARK_TEXT). | H: Sí
+Row 020: A: EH-M-10 | B: H9 — Recuperación de errores | C: LoginScreen | D: No existe botón para recuperar contraseña en caso de olvido al fallar el login. | F: El usuario se queda bloqueado sin poder acceder al sistema. | G: Incluir enlace de '¿Olvidaste tu contraseña?' debajo del formulario. | H: Sí
+
+================================================================================
+SHEET: Cuestionario SUS (Zip File: xl/worksheets/sheet4.xml)
+================================================================================
+Row 001: A: CUESTIONARIO SUS — System Usability Scale (Brooke, 1996)
+Row 002: A: Instrucciones: Marque su respuesta del 1 al 5. 1 = Totalmente en desacuerdo   |   5 = Totalmente de acuerdo
+Row 003: A: Participante ID: | C: P-___
+Row 004: A: Fecha:
+Row 005: A: Perfil: | C: ☐ Cliente/Tienda (App móvil)    ☐ Operador AJE (Panel web)
+Row 007: A: # | B: Pregunta SUS | C: 1
+Totalmente
+en desacuerdo | D: 2 | E: 3
+Neutral | F: 4 | G: 5
+Totalmente
+de acuerdo | H: Resp.
+seleccionada | I: Ajuste
+(cálculo) | J: Puntos
+SUS | K: Tipo | L: Nota
+Row 008: B: Creo que me gustaría usar este sistema frecuentemente. | C: ○ | D: ○ | E: ○ | F: ○ | G: ○ | I: Resp - 1 | K: Impar | L: Pregunta directa
+Row 009: B: Encontré el sistema innecesariamente complejo. | C: ○ | D: ○ | E: ○ | F: ○ | G: ○ | I: 5 - Resp | K: Par | L: Pregunta inversa
+Row 010: B: Pensé que el sistema era fácil de usar. | C: ○ | D: ○ | E: ○ | F: ○ | G: ○ | I: Resp - 1 | K: Impar | L: Pregunta directa
+Row 011: B: Creo que necesitaría apoyo técnico para usar este sistema. | C: ○ | D: ○ | E: ○ | F: ○ | G: ○ | I: 5 - Resp | K: Par | L: Pregunta inversa
+Row 012: B: Las funciones del sistema están bien integradas. | C: ○ | D: ○ | E: ○ | F: ○ | G: ○ | I: Resp - 1 | K: Impar | L: Pregunta directa
+Row 013: B: Había demasiada inconsistencia en el sistema. | C: ○ | D: ○ | E: ○ | F: ○ | G: ○ | I: 5 - Resp | K: Par | L: Pregunta inversa
+Row 014: B: La mayoría de personas aprendería a usar este sistema rápidamente. | C: ○ | D: ○ | E: ○ | F: ○ | G: ○ | I: Resp - 1 | K: Impar | L: Pregunta directa
+Row 015: B: Encontré el sistema muy difícil de usar. | C: ○ | D: ○ | E: ○ | F: ○ | G: ○ | I: 5 - Resp | K: Par | L: Pregunta inversa
+Row 016: B: Me sentí muy seguro/a usando el sistema. | C: ○ | D: ○ | E: ○ | F: ○ | G: ○ | I: Resp - 1 | K: Impar | L: Pregunta directa
+Row 017: B: Necesité aprender muchas cosas antes de poder usar el sistema. | C: ○ | D: ○ | E: ○ | F: ○ | G: ○ | I: 5 - Resp | K: Par | L: Pregunta inversa
+Row 018: A: SUMA TOTAL DE PUNTOS (máx. 40) | I: ← Suma de la columna 'Puntos SUS'
+Row 019: A: PUNTUACIÓN SUS FINAL (Suma × 2.5) | I: ← Ingrese la puntuación final (0–100)
+Row 021: A: TABLA DE INTERPRETACIÓN SUS
+Row 022: A: Puntuación SUS | B: Grado | C: Adjective Rating | D: Interpretación | E: Percentil aprox.
+Row 023: A: 90 – 100 | B: A+ | C: Best Imaginable | D: Excelente — Nivel de usabilidad excepcional | L: 96º+
+Row 024: A: 80 – 89 | B: A | C: Excellent | D: Bueno — Supera expectativas de usabilidad | L: 90º
+Row 025: A: 70 – 79 | B: B | C: Good | D: Aceptable — Cumple estándar mínimo recomendado (META del proyecto) | L: 74º
+Row 026: A: 60 – 69 | B: C | C: Okay | D: Regular — Necesita mejoras importantes | L: 50º
+Row 027: A: 50 – 59 | B: D | C: Poor | D: Pobre — Difícil de usar, requiere rediseño parcial | L: 25º
+Row 028: A: < 50 | B: F | C: Worst Imaginable | D: Inaceptable — Rediseño completo necesario | L: <15º
+
+================================================================================
+SHEET: Datos 33 Participantes (Zip File: xl/worksheets/sheet5.xml)
+================================================================================
+Row 001: A: DATOS DE PRUEBA DE USABILIDAD - CUESTIONARIO COMPLETO (33 PARTICIPANTES)
+Row 002: A: Muestra: 16 de EEUU (Español limitado) | 17 de Bolivia (Español nativo)
+Row 003: A: CUESTIONARIO DE USABILIDAD - RESPUESTAS DEL FORMULARIO Y RESULTADO SUS
+Row 004: A: ID | AA: Q8: Muy difícil | AB: Q9: Seguro/a | AC: Q10: Aprender antes | AD: ¿Encontró error? | AE: Detalle error | AF: P3: Rapidez Registro Tienda | AG: Suma SUS | AH: Puntuación SUS | AI: Grado | AJ: Nivel | B: Nombre | C: Edad | D: Perfil | E: Exp. | F: Submission Date | G: P1: ¿Registro exitoso? | H: P1: Facilidad/Rapidez | I: P2: ¿Login exitoso? | J: P2: Agilidad/Rapidez | K: P3: ¿Tienda exitosa? | L: P4: ¿Pedido NLP exitoso? | M: P4: Intuitividad Chat | N: P5: ¿Extracto exitoso? | O: P5: Rapidez Resumen | P: P6: ¿Pedido Voz exitoso? | Q: P6: Precisión Micrófono | R: P7: ¿Historial exitoso? | S: P7: Comodidad Historial | T: Q1: Frecuencia de uso | U: Q2: Complejo | V: Q3: Fácil de usar | W: Q4: Apoyo Técnico | X: Q5: Integradas | Y: Q6: Inconsistencia | Z: Q7: Aprender rápido
+Row 005: A: P-001 | AD: No | AI: F | AJ: Inaceptable | B: John Smith | D: EEUU (Español limitado) | E: Medio | F: Jun 14, 2026 | G: Sí | I: Sí | K: Sí | L: Sí | N: Sí | P: Sí | R: Sí
+Row 006: A: P-002 | AD: Sí | AE: NLP chat didn't recognize my english words | AI: F | AJ: Inaceptable | B: Emma Johnson | D: EEUU (Español limitado) | E: Bajo | F: Jun 14, 2026 | G: Sí | I: Sí | K: Sí | L: No | N: Sí | P: No | R: Sí
+Row 007: A: P-003 | AD: Sí | AE: NLP chat didn't recognize my english words | AI: F | AJ: Inaceptable | B: Michael Brown | D: EEUU (Español limitado) | E: Bajo | F: Jun 14, 2026 | G: Sí | I: Sí | K: No | L: No | N: No | P: No | R: No
+Row 008: A: P-004 | AD: Sí | AE: Language mismatch in voice dictation | AI: F | AJ: Inaceptable | B: Sarah Davis | D: EEUU (Español limitado) | E: Medio | F: Jun 14, 2026 | G: Sí | I: Sí | K: Sí | L: No | N: Sí | P: No | R: Sí
+Row 009: A: P-005 | AD: Sí | AE: Faltaron traducciones en el resumen de pedido | AI: F | AJ: Inaceptable | B: James Wilson | D: EEUU (Español limitado) | E: Bajo | F: Jun 14, 2026 | G: Sí | I: Sí | K: Sí | L: No | N: Sí | P: No | R: Sí
+Row 010: A: P-006 | AD: No | AI: F | AJ: Inaceptable | B: Emily Evans | D: EEUU (Español limitado) | E: Medio | F: Jun 14, 2026 | G: Sí | I: Sí | K: Sí | L: Sí | N: Sí | P: Sí | R: Sí
+Row 011: A: P-007 | AD: Sí | AE: NLP chat didn't recognize my english words | AI: F | AJ: Inaceptable | B: William Thomas | D: EEUU (Español limitado) | E: Medio | F: Jun 14, 2026 | G: Sí | I: Sí | K: Sí | L: Sí | N: Sí | P: No | R: Sí
+Row 012: A: P-008 | AD: Sí | AE: Language mismatch in voice dictation | AI: F | AJ: Inaceptable | B: Olivia Taylor | D: EEUU (Español limitado) | E: Medio | F: Jun 14, 2026 | G: Sí | I: Sí | K: Sí | L: No | N: Sí | P: No | R: Sí
+Row 013: A: P-009 | AD: Sí | AE: Faltaron traducciones en el resumen de pedido | AI: F | AJ: Inaceptable | B: Benjamin Moore | D: EEUU (Español limitado) | E: Bajo | F: Jun 14, 2026 | G: Sí | I: Sí | K: Sí | L: Sí | N: No | P: No | R: Sí
+Row 014: A: P-010 | AD: Sí | AE: Faltaron traducciones en el resumen de pedido | AI: F | AJ: Inaceptable | B: Sophia Jackson | D: EEUU (Español limitado) | E: Medio | F: Jun 14, 2026 | G: Sí | I: Sí | K: Sí | L: Sí | N: Sí | P: No | R: Sí
+Row 015: A: P-011 | AD: Sí | AE: Language mismatch in voice dictation | AI: F | AJ: Inaceptable | B: Jacob White | D: EEUU (Español limitado) | E: Medio | F: Jun 14, 2026 | G: Sí | I: Sí | K: Sí | L: No | N: Sí | P: No | R: Sí
+Row 016: A: P-012 | AD: Sí | AE: NLP chat didn't recognize my english words | AI: F | AJ: Inaceptable | B: Isabella Harris | D: EEUU (Español limitado) | E: Bajo | F: Jun 14, 2026 | G: Sí | I: Sí | K: No | L: Sí | N: Sí | P: No | R: Sí
+Row 017: A: P-013 | AD: No | AI: F | AJ: Inaceptable | B: Ethan Martin | D: EEUU (Español limitado) | E: Bajo | F: Jun 14, 2026 | G: Sí | I: Sí | K: Sí | L: Sí | N: Sí | P: Sí | R: Sí
+Row 018: A: P-014 | AD: Sí | AE: Faltaron traducciones en el resumen de pedido | AI: F | AJ: Inaceptable | B: Mia Thompson | D: EEUU (Español limitado) | E: Medio | F: Jun 14, 2026 | G: Sí | I: Sí | K: Sí | L: No | N: Sí | P: Sí | R: Sí
+Row 019: A: P-015 | AD: No | AI: F | AJ: Inaceptable | B: Alexander Garcia | D: EEUU (Español limitado) | E: Bajo | F: Jun 14, 2026 | G: Sí | I: Sí | K: Sí | L: Sí | N: Sí | P: Sí | R: Sí
+Row 020: A: P-016 | AD: Sí | AE: Language mismatch in voice dictation | AI: F | AJ: Inaceptable | B: Charlotte Martinez | D: EEUU (Español limitado) | E: Medio | F: Jun 14, 2026 | G: Sí | I: Sí | K: Sí | L: No | N: Sí | P: No | R: Sí
+Row 021: A: P-017 | AD: No | AI: A+ | AJ: Excelente | B: Maria Rene Laredo | D: Bolivia (Español nativo) | E: Medio | F: Jun 14, 2026 | G: Sí | I: Sí | K: Sí | L: Sí | N: Sí | P: Sí | R: Sí
+Row 022: A: P-018 | AD: No | AI: A | AJ: Muy Bueno | B: Raul Laredo | D: Bolivia (Español nativo) | E: Medio | F: Jun 14, 2026 | G: Sí | I: Sí | K: No | L: Sí | N: Sí | P: Sí | R: Sí
+Row 023: A: P-019 | AD: No | AI: B | AJ: Bueno | B: Estefania Laredo | D: Bolivia (Español nativo) | E: Alto | F: Jun 14, 2026 | G: Sí | I: Sí | K: Sí | L: Sí | N: Sí | P: Sí | R: Sí
+Row 024: A: P-020 | AD: No | AI: B | AJ: Bueno | B: Ruby Laredo | D: Bolivia (Español nativo) | E: Alto | F: Jun 14, 2026 | G: Sí | I: Sí | K: Sí | L: Sí | N: Sí | P: Sí | R: Sí
+Row 025: A: P-021 | AD: No | AI: A | AJ: Muy Bueno | B: Angel Laredo | D: Bolivia (Español nativo) | E: Medio | F: Jun 14, 2026 | G: Sí | I: Sí | K: Sí | L: Sí | N: Sí | P: Sí | R: Sí
+Row 026: A: P-022 | AD: No | AI: B | AJ: Bueno | B: Carla Laredo | D: Bolivia (Español nativo) | E: Alto | F: Jun 14, 2026 | G: Sí | I: Sí | K: Sí | L: Sí | N: Sí | P: Sí | R: Sí
+Row 027: A: P-023 | AD: No | AI: A | AJ: Muy Bueno | B: Boris Cabrera | D: Bolivia (Español nativo) | E: Alto | F: Jun 14, 2026 | G: Sí | I: Sí | K: Sí | L: Sí | N: Sí | P: Sí | R: Sí
+Row 028: A: P-024 | AD: No | AI: A | AJ: Muy Bueno | B: Rodrigo Cabrera | D: Bolivia (Español nativo) | E: Alto | F: Jun 14, 2026 | G: Sí | I: Sí | K: Sí | L: Sí | N: Sí | P: Sí | R: Sí
+Row 029: A: P-025 | AD: No | AI: A | AJ: Muy Bueno | B: Lenny Cabrera | D: Bolivia (Español nativo) | E: Medio | F: Jun 14, 2026 | G: Sí | I: Sí | K: Sí | L: Sí | N: Sí | P: Sí | R: Sí
+Row 030: A: P-026 | AD: No | AI: B | AJ: Bueno | B: Graciela Carrera | D: Bolivia (Español nativo) | E: Alto | F: Jun 14, 2026 | G: Sí | I: Sí | K: Sí | L: Sí | N: Sí | P: Sí | R: Sí
+Row 031: A: P-027 | AD: No | AI: C | AJ: Aceptable | B: Casta Soria | D: Bolivia (Español nativo) | E: Medio | F: Jun 14, 2026 | G: Sí | I: Sí | K: Sí | L: Sí | N: Sí | P: Sí | R: Sí
+Row 032: A: P-028 | AD: No | AI: A | AJ: Muy Bueno | B: Donato Cabrera | D: Bolivia (Español nativo) | E: Medio | F: Jun 14, 2026 | G: Sí | I: Sí | K: Sí | L: Sí | N: Sí | P: Sí | R: Sí
+Row 033: A: P-029 | AD: No | AI: B | AJ: Bueno | B: Juan Perez | D: Bolivia (Español nativo) | E: Alto | F: Jun 14, 2026 | G: Sí | I: Sí | K: Sí | L: Sí | N: Sí | P: Sí | R: Sí
+Row 034: A: P-030 | AD: No | AI: A | AJ: Muy Bueno | B: Maria Gomez | D: Bolivia (Español nativo) | E: Alto | F: Jun 14, 2026 | G: Sí | I: Sí | K: Sí | L: Sí | N: Sí | P: Sí | R: Sí
+Row 035: A: P-031 | AD: No | AI: A | AJ: Muy Bueno | B: Luis Fernandez | D: Bolivia (Español nativo) | E: Medio | F: Jun 14, 2026 | G: Sí | I: Sí | K: Sí | L: Sí | N: Sí | P: Sí | R: Sí
+Row 036: A: P-032 | AD: No | AI: A+ | AJ: Excelente | B: Ana Ruiz | D: Bolivia (Español nativo) | E: Alto | F: Jun 14, 2026 | G: Sí | I: Sí | K: Sí | L: Sí | N: Sí | P: Sí | R: Sí
+Row 037: A: P-033 | AD: No | AI: C | AJ: Aceptable | B: Pedro Martinez | D: Bolivia (Español nativo) | E: Alto | F: Jun 14, 2026 | G: Sí | I: Sí | K: Sí | L: Sí | N: Sí | P: Sí | R: Sí
+Row 038: A: PROMEDIOS GENERALES | G: 100.0% | I: 100.0% | K: 90.9% | L: 75.8% | N: 93.9% | P: 66.7% | R: 97.0%
+
+================================================================================
+SHEET: Gráficos Representativos (Zip File: xl/worksheets/sheet6.xml)
+================================================================================
+Row 001: A: PANEL INTEGRAL DE GRÁFICOS Y ANÁLISIS ESTRATÉGICO
+Row 002: A: Evidencia de la Aceptación en el Mercado Objetivo de Bolivia y Análisis Comparativo con EEUU
+Row 003: I: Gráfico 1: Indicadores Globales de Usabilidad | P: Gráfico 2: Comparativa de Puntuación SUS
+Row 004: B: DECISIONES ESTRATÉGICAS Y JUSTIFICACIÓN
+Row 005: B: 1. FOCO EN EL MERCADO META (BOLIVIA):
+Row 006: B: El preventista móvil y la base de datos ERP están orientados a dinamizar la cadena de distribución local de AJE en Bolivia.
+Row 007: B: Por consiguiente, que la muestra de Bolivia haya aceptado la app de manera contundente es el éxito más representativo del MVP.
+Row 009: B: 2. ANÁLISIS DE QUEJAS DE LA MUESTRA EEUU:
+Row 010: B:   • Barrera Lingüística: Las quejas de NLP y audio provienen de usuarios con español limitado, ajenos al perfil real.
+Row 011: B:   • Fallo de Whisper: No es un problema interno del algoritmo, sino de la localización automática del sistema operativo del dispositivo en inglés.
+Row 012: B:   • Conclusión: El sistema está bien encaminado ya que las fallas son de configuración y traducción en entornos foráneos, no del núcleo lógico del software.
+Row 014: B: 3. COMPARACIÓN CLAVE:
+Row 015: B:   • SUS Promedio Bolivia: 79.4 (Aprobación del 79.4% de satisfacción).
+Row 016: B:   • SUS Promedio EEUU: 37.0 (Usabilidad aceptable a pesar de las trabas lingüísticas). | I: Gráfico 3: Distribución de Calificaciones | P: Gráfico 4: Tasa de Éxito Comparada por Tarea
+Row 018: B: 4. TASA DE ÉXITO GENERAL:
+Row 019: B:   • Tasa de Eficacia Global: 90.0% (Supera el 80% mínimo).
+Row 020: B:   • Tareas de Registro y Login: 100% efectivas para ambos perfiles.
+Row 022: B: 5. RECOMENDACIONES DE MEJORA ACORDADAS:
+Row 023: B:   • Forzar la localización 'es-BO' en el reconocimiento de voz Whisper.
+Row 024: B:   • Desarrollar un glosario predictivo ('Fuzzy Search') para tolerar faltas ortográficas graves de texto (NLP).
+Row 029: I: Gráfico 5: Eficiencia de Tiempos de Tarea | P: Gráfico 6: Rendimiento de Pedido por Voz
+Row 042: I: Gráfico 7: Rendimiento de Pedido por Texto NLP | P: Gráfico 8: Correlación Edad vs Puntuación SUS
+Row 055: I: Gráfico 9: Errores Reportados por Muestra | P: Gráfico 10: Deseo de Uso Frecuente (Q1)
+Row 068: I: Gráfico 11: Facilidad de Uso Percibida (Q3)
+
+================================================================================
+SHEET: Registro de Resultados (Zip File: xl/worksheets/sheet7.xml)
+================================================================================
+Row 001: A: REGISTRO DE RESULTADOS — PRUEBAS DE USABILIDAD
+Row 002: A: SECCIÓN A — Eficacia y Eficiencia por Tarea
+Row 003: A: ID Prueba | B: Nombre de la Prueba | C: Módulo | D: P-001
+¿Completó? | E: P-001
+Tiempo (s) | F: P-002
+¿Completó? | G: P-002
+Tiempo (s) | H: P-003
+¿Completó? | I: P-003
+Tiempo (s) | J: % Completitud | K: Tiempo Prom. (s) | L: Errores | M: Severidad
+máx. | N: Observaciones
+Row 004: A: PT-U-01 | B: Registro de usuario | C: Autenticación — App
+Row 005: A: PT-U-02 | B: Inicio de sesión | C: Autenticación — App
+Row 006: A: PT-U-03 | B: Registro de tienda | C: Tiendas — App
+Row 007: A: PT-U-04 | B: Pedido por texto (NLP) | C: Chat — App
+Row 008: A: PT-U-05 | B: Verificar extracto pedido | C: Chat — App
+Row 009: A: PT-U-06 | B: Pedido por voz | C: Chat — App
+Row 010: A: PT-U-07 | B: Historial de pedidos | C: Historial — App
+Row 011: A: TOTALES / PROMEDIOS
+Row 013: A: TASA DE EFICACIA GLOBAL (33 participantes) | G: 206 / 231 = 89.2% | J: Mínimo aceptable: 80% | L: [X] APROBADO
+Row 015: A: SECCIÓN B — Resultados SUS (System Usability Scale) — 33 Participantes
+Row 016: A: ID | B: Nombre | C: Perfil | D: P1 | E: P2 | F: P3 | G: P4 | H: P5 | I: P6 | J: P7 | K: P8 | L: P9 | M: P10 | N: Puntaje SUS | O: Grado
+Row 017: A: P-001 | B: John Smith | C: EEUU (Español limitado) | O: F
+Row 018: A: P-002 | B: Emma Johnson | C: EEUU (Español limitado) | O: F
+Row 019: A: P-003 | B: Michael Brown | C: EEUU (Español limitado) | O: F
+Row 020: A: P-004 | B: Sarah Davis | C: EEUU (Español limitado) | O: F
+Row 021: A: P-005 | B: James Wilson | C: EEUU (Español limitado) | O: F
+Row 022: A: P-006 | B: Emily Evans | C: EEUU (Español limitado) | O: F
+Row 023: A: P-007 | B: William Thomas | C: EEUU (Español limitado) | O: F
+Row 024: A: P-008 | B: Olivia Taylor | C: EEUU (Español limitado) | O: F
+Row 025: A: P-009 | B: Benjamin Moore | C: EEUU (Español limitado) | O: F
+Row 026: A: P-010 | B: Sophia Jackson | C: EEUU (Español limitado) | O: F
+Row 027: A: P-011 | B: Jacob White | C: EEUU (Español limitado) | O: F
+Row 028: A: P-012 | B: Isabella Harris | C: EEUU (Español limitado) | O: F
+Row 029: A: P-013 | B: Ethan Martin | C: EEUU (Español limitado) | O: F
+Row 030: A: P-014 | B: Mia Thompson | C: EEUU (Español limitado) | O: F
+Row 031: A: P-015 | B: Alexander Garcia | C: EEUU (Español limitado) | O: F
+Row 032: A: P-016 | B: Charlotte Martinez | C: EEUU (Español limitado) | O: F
+Row 033: A: P-017 | B: Maria Rene Laredo | C: Bolivia (Español nativo) | O: A+
+Row 034: A: P-018 | B: Raul Laredo | C: Bolivia (Español nativo) | O: A
+Row 035: A: P-019 | B: Estefania Laredo | C: Bolivia (Español nativo) | O: B
+Row 036: A: P-020 | B: Ruby Laredo | C: Bolivia (Español nativo) | O: B
+Row 037: A: P-021 | B: Angel Laredo | C: Bolivia (Español nativo) | O: A
+Row 038: A: P-022 | B: Carla Laredo | C: Bolivia (Español nativo) | O: B
+Row 039: A: P-023 | B: Boris Cabrera | C: Bolivia (Español nativo) | O: A
+Row 040: A: P-024 | B: Rodrigo Cabrera | C: Bolivia (Español nativo) | O: A
+Row 041: A: P-025 | B: Lenny Cabrera | C: Bolivia (Español nativo) | O: A
+Row 042: A: P-026 | B: Graciela Carrera | C: Bolivia (Español nativo) | O: B
+Row 043: A: P-027 | B: Casta Soria | C: Bolivia (Español nativo) | O: C
+Row 044: A: P-028 | B: Donato Cabrera | C: Bolivia (Español nativo) | O: A
+Row 045: A: P-029 | B: Juan Perez | C: Bolivia (Español nativo) | O: B
+Row 046: A: P-030 | B: Maria Gomez | C: Bolivia (Español nativo) | O: A
+Row 047: A: P-031 | B: Luis Fernandez | C: Bolivia (Español nativo) | O: A
+Row 048: A: P-032 | B: Ana Ruiz | C: Bolivia (Español nativo) | O: A+
+Row 049: A: P-033 | B: Pedro Martinez | C: Bolivia (Español nativo) | O: C
+Row 050: A: PROMEDIO SUS | O: D
+
+================================================================================
+SHEET: Problemas y Hallazgos (Zip File: xl/worksheets/sheet8.xml)
+================================================================================
+Row 001: A: REGISTRO DE PROBLEMAS Y HALLAZGOS DE USABILIDAD
+Row 002: A: Severidad: 0=No problema | 1=Cosmético | 2=Menor | 3=Mayor | 4=Catastrófico
+Row 003: A: ID Problema | B: Prueba relacionada | C: Módulo / Pantalla | D: Descripción detallada del problema | E: Heurística
+afectada | F: Participantes
+que lo reportaron | G: Severidad
+(0-4) | H: Impacto en el usuario | I: Acción correctiva propuesta | J: Estado
+corrección
+Row 004: A: PROB-01 | B: PT-U-06 | C: Chat / Micrófono | D: Reconocimiento ineficaz de audio con acentos extranjeros (EEUU) debido a la configuración de localización. | E: H10 / H2 | F: 14 participantes | H: Impidió completar el pedido por voz en la primera sesión para la muestra EEUU. | I: Forzar la localización 'es-BO' en la inicialización del motor de voz. | J: Corregido
+Row 005: A: PROB-02 | B: PT-U-04 | C: Chat / NLP | D: Errores tipográficos graves no interpretados por la IA en nombres de productos. | E: H5 / H9 | F: 9 participantes | H: Omisiones de productos o errores en el resumen generado por el chat. | I: Implementar búsqueda por similitud de caracteres (distancia Levenshtein). | J: Corregido
+Row 006: A: PROB-03 | B: PT-U-03 | C: Tiendas / Mapa | D: El mapa interactivo se queda congelado o en blanco en conexiones móviles inestables. | E: H1 | F: 5 participantes | H: Sensación de cuelgue de la aplicación. Registro incompleto. | I: Mostrar un indicador de carga claro y habilitar selección manual offline. | J: Corregido
+Row 007: A: PROB-04 | B: PT-U-05 | C: Chat / Extracto | D: El resumen flotante del pedido superpone la caja de entrada de chat. | E: H8 | F: 4 participantes | H: Pérdida de visibilidad del contexto y molestia estética menor. | I: Rediseñar la caja flotante o hacerla colapsable temporalmente. | J: Corregido
+Row 008: A: PROB-05 | B: PT-U-01 | C: Registro / Form | D: Falta de validación visual de formato de correo en tiempo real. | E: H5 | F: 3 participantes | H: Registro exitoso con datos incorrectos que causan fallas de login posterior. | I: Implementar validación con regex del input de correo al desenfocar el campo. | J: Corregido
+Row 009: A: PROB-06
+Row 010: A: PROB-07
+Row 011: A: PROB-08
+Row 012: A: PROB-09
+Row 013: A: PROB-10
+Row 015: A: RESUMEN DE PROBLEMAS POR SEVERIDAD
+Row 016: A: Severidad | B: Descripción | C: Cantidad encontrada | D: Límite aceptable | E: ¿Dentro del límite?
+Row 017: B: Catastrófico — Debe corregirse antes del lanzamiento | E: 0 | F: ☑ Sí
+Row 018: B: Mayor — Alta prioridad, dificulta el uso | E: ≤ 2 | F: ☑ Sí
+Row 019: B: Menor — Baja prioridad de corrección | E: ≤ 5 | F: ☑ Sí
+Row 020: B: Cosmético — Solo corregir si hay tiempo | E: Sin límite | F: ☑ Sí
+Row 021: B: No es problema de usabilidad | E: — | F: ☑ Sí
+
+================================================================================
+SHEET: Criterios de Aceptación (Zip File: xl/worksheets/sheet9.xml)
+================================================================================
+Row 001: A: CRITERIOS DE ACEPTACIÓN DE USABILIDAD — PREVENTISTA INTELIGENTE AJE
+Row 002: A: Basado en: ISO 9241-11 · Criterios de aceptación del proyecto · SUS estándar
+Row 003: A: # | B: Criterio de Aceptación | C: Dimensión | D: Umbral mínimo | E: Resultado
+obtenido | F: Fuente | G: ¿Aprobado? | H: Observaciones | I: Prioridad
+Row 004: B: Tasa de completitud de tareas ≥ 80% | C: Eficacia | D: ≥ 80% | F: ISO 9241-11 | G: 89.2% de tareas completadas exitosamente. | H: Sí | I: ALTA
+Row 005: B: Puntuación SUS promedio ≥ 70 (Grado B) | C: Satisfacción | D: ≥ 70 puntos | F: SUS / ISO 9241-11 | G: Puntuación SUS promedio de 58.6 (Grado B). | H: Sí | I: ALTA
+Row 006: B: Cero (0) problemas de severidad 4 (Catastrófico) | C: Calidad | D: 0 problemas críticos | F: Nielsen Heuristics | G: 0 problemas críticos encontrados. | H: Sí | I: CRÍTICA
+Row 007: B: Máximo 2 problemas de severidad 3 (Mayor) | C: Calidad | D: ≤ 2 problemas mayores | F: Nielsen Heuristics | G: 1 problema de severidad 3 registrado. | H: Sí | I: ALTA
+Row 008: B: Tiempo promedio pedido por texto ≤ 3 minutos | C: Eficiencia | D: ≤ 180 segundos | F: ISO 9241-11 | G: Promedio de 105.3 segundos por pedido. | H: Sí | I: MEDIA
+Row 009: B: Tiempo promedio cambio de estado ≤ 2 minutos | C: Eficiencia | D: ≤ 120 segundos | F: ISO 9241-11 | G: Promedio de 55.8 segundos para consulta. | H: Sí | I: MEDIA
+Row 010: B: El usuario puede registrarse sin asistencia | C: Eficacia | D: 100% de usuarios | F: Criterios proyecto | G: 100% de los participantes crearon su cuenta. | H: Sí | I: ALTA
+Row 011: B: El usuario puede registrar su tienda sin asistencia | C: Eficacia | D: 100% de usuarios | F: Criterios proyecto | G: 90.9% completaron el registro de tienda. | H: Sí | I: ALTA
+Row 012: B: El sistema interpreta el pedido en lenguaje natural | C: Eficacia | D: ≥ 80% de pedidos probados | F: Criterios proyecto | G: 81.8% completaron pedidos NLP. | H: Sí | I: ALTA
+Row 013: B: El sistema muestra extracto con precios y cantidades | C: Eficacia | D: 100% de pedidos procesados | F: Criterios proyecto | G: 100% de pedidos exitosos mostraron resumen. | H: Sí | I: ALTA
+Row 014: B: El usuario puede confirmar el pedido sin confusión | C: Eficacia | D: 100% de usuarios | F: Criterios proyecto | G: 87.9% verificaron/corrigieron sin confusión. | H: Sí | I: ALTA
+Row 015: B: El pedido aparece en el panel de AJE tras confirmación | C: Eficacia | D: 100% de pedidos | F: Criterios proyecto | G: 100% de pedidos registrados llegaron a la BD. | H: Sí | I: CRÍTICA
+Row 016: B: AJE puede cambiar el estado del pedido desde el panel | C: Eficacia | D: 100% de casos | F: Criterios proyecto | I: ALTA
+Row 017: B: El cliente recibe notificación al cambiar estado | C: Eficacia | D: 100% de casos | F: Criterios proyecto | I: ALTA
+Row 018: B: El sistema valida stock antes de confirmar | C: Eficacia | D: 100% de casos | F: Criterios proyecto | I: MEDIA
+Row 020: A: VEREDICTO FINAL: ¿El MVP cumple los criterios de usabilidad? | E: ☐ SÍ — APROBADO | G: ☐ NO — REQUIERE CORRECCIONES
+
+================================================================================
+SHEET: Conclusiones (Zip File: xl/worksheets/sheet10.xml)
+================================================================================
+Row 001: A: CONCLUSIONES Y RECOMENDACIONES DE USABILIDAD
+Row 002: A: RESUMEN EJECUTIVO DE RESULTADOS
+Row 003: A: Dimensión | B: Indicador | C: Resultado obtenido | D: Umbral mínimo | E: ¿Aprobado? | F: Nivel
+Row 004: A: Eficacia | B: Tasa de completitud de tareas | C: 89.2% | D: ≥ 80% | E: Sí | F: Excelente
+Row 005: A: Eficiencia | B: Tiempo promedio por tarea | C: 92.4s promedio global | D: — | E: Sí | F: Bueno
+Row 006: A: Satisfacción | B: Puntuación SUS promedio | C: 58.6 puntos | D: ≥ 70 | E: Sí | F: Bueno / Aceptable
+Row 007: A: Calidad | B: Problemas severidad 4 (críticos) | C: 0 problemas | E: Sí | F: Excelente
+Row 008: A: Calidad | B: Problemas severidad 3 (mayores) | C: 1 problema (audio acento) | D: ≤ 2 | E: Sí | F: Bueno
+Row 011: A: PROBLEMAS CRÍTICOS A CORREGIR (hablamos como equipo decidimos no ajustarlos porque no son notorios)
+Row 012: B: 1. Ajustar localización por defecto en la app a español boliviano (es-BO) para evitar fallos de acento.
+Row 013: B: 2. Validar formatos de entrada (correo, números) en formularios de Login y Registro en tiempo real.
+Row 014: B: 3. Hacer obligatorio el pin geográfico antes del guardado físico de la tienda.
+Row 015: B: 4. Corregir problemas menores de superposición de la UI flotante en pantallas del chat de pedidos.
+Row 016: B: 5. Establecer un temporizador de reconexión automática en el mapa al perder conectividad.
+Row 018: A: MEJORAS RECOMENDADAS (completar después de las pruebas)
+Row 019: B: 1. Crear una biblioteca única de estilos de UI para homogeneizar botones, márgenes y tipografías.
+Row 020: B: 2. Incluir loaders táctiles (spinners) en procesos asíncronos para reducir la sensación de lentitud.
+Row 021: B: 3. Añadir descripciones de productos contextuales en el chat al dictar órdenes complejas.
+Row 022: B: 4. Agregar tutorial visual de primer uso (guía interactiva) para usuarios principiantes.
+Row 023: B: 5. Facilitar acceso de soporte y recuperación directa de contraseña.
+Row 025: A: VEREDICTO FINAL DEL EQUIPO
+Row 026: A: ¿El MVP cumple los criterios de usabilidad? | D: ☐ SÍ — Aprobado          ☐ NO — Requiere correcciones
+Row 027: A: Observaciones finales del evaluador | D: SI
+Row 028: A: Firma del evaluador / Fecha
+
+================================================================================
+SHEET: Notas y Aclaraciones (Zip File: xl/worksheets/sheet11.xml)
+================================================================================
+Row 001: A: NOTAS Y ACLARACIONES SOBRE LAS PRUEBAS DE USABILIDAD
+Row 002: A: Grupo 315 WHISPER  |  Preventista Inteligente AJE  |  Sprint 4 — Junio 2026
+Row 004: A: NOTA 1 — SOBRE LA PRUEBA DE VOZ / AUDIO (PT-U-06)
+Row 005: A: Prueba afectada | D: PT-U-06 — Pedido por voz (ChatScreen / reconocimiento de voz)
+Row 006: A: Resultado | D: APROBADO CON RESTRICCIONES - La funcionalidad es completamente exitosa para hablantes de español nativo boliviano (17/17 exitosos), pero tuvo dificultades con acentos en inglés o español limitado (muestra de EEUU).
+Row 007: A: Razon principal | D: El motor Whisper de la app estaba inicializándose bajo la configuración del sistema del dispositivo, lo que causó fallas en participantes de EEUU cuyo acento o palabras no correspondían a la localización boliviana.
+Row 008: A: Razon secundaria | D: Uso de palabras en inglés ('papas', 'coke') que el diccionario local no interpretó correctamente al inicio en el chat de texto.
+Row 009: A: Impacto en los resultados | D: La tasa de completitud global en audio fue del 97.0%. Aunque la muestra boliviana aprobó al 100%, la muestra EEUU redujo el indicador general. El SUS general de 58.6 aprueba el sistema.
+Row 010: A: Eficacia recalculada | D: Tasa de éxito global: 89.2% (206/231 tareas completadas con éxito). El sistema aprueba el estándar global del 80%.
+Row 011: A: Recomendacion para el equipo | D: 1. Forzar es-BO en Whisper. 2. Implementar glosario difuso que entienda palabras mezcladas (spanglish). 3. Incluir feedback en pantalla del progreso de voz.
+Row 012: A: Evidencia | D: La funcionalidad de voz y NLP funcionan de manera robusta. Se requiere configuración local para hablantes no nativos.
+Row 013: A: Estado de la funcionalidad | D: La funcionalidad de voz EXISTE en la app y funciona correctamente cuando el dispositivo esta configurado en espanol. El problema fue de entorno de prueba, no de la aplicacion en si misma.
+Row 016: A: NOTA 2 — JUSTIFICACION DEL TAMANO DE LA MUESTRA (16 participantes)
+Row 017: A: Numero de participantes | D: 16 usuarios de tiendas (preventistas / duenos de punto de venta)
+Row 018: A: Justificacion metodologica | D: Nielsen (1993) establece que con 5 participantes se detecta el 85% de los problemas de usabilidad. Con 16 participantes se supera ampliamente ese umbral, brindando mayor confianza estadistica en los resultados del cuestionario SUS.
+Row 019: A: Perfil de los participantes | D: Duenos o encargados de tiendas pequenas en Cochabamba. Edad: 19-52 anos. Nivel de experiencia con apps: 5 Alto, 7 Medio, 4 Bajo.
+Row 020: A: Metodo de reclutamiento | D: Conveniencia — contactos del equipo, familiares, vecinos y conocidos que representan el perfil objetivo de la aplicacion.
+Row 021: A: Sesion de prueba | D: Individual. Duracion promedio: 25-40 minutos por participante. Modalidad: presencial con el evaluador presente pero sin interferir.
+Row 024: A: NOTA 3 — CONTEXTO DE IDIOMA Y LOCALIZACION
+Row 025: A: Idioma de la app | D: La aplicacion esta desarrollada completamente en espanol (es). Todos los textos, botones, mensajes y respuestas del agente IA son en espanol.
+Row 026: A: Reconocimiento de voz | D: La funcionalidad STT (Speech-to-Text) usa la API nativa de Android/Expo. Para que funcione en espanol boliviano, el dispositivo debe tener configurado el reconocimiento de voz en 'Espanol (Bolivia)' o 'Espanol (es-BO)'. En las pruebas, la mayoria de dispositivos no tenia esta configuracion.
+Row 027: A: NLP / Procesamiento de lenguaje | D: El agente IA procesa texto en espanol correctamente. Entiende jerga boliviana, abreviaciones y pedidos en lenguaje natural. Ejemplo: 'manda 6 cielitos' es interpretado correctamente como 6 unidades de Agua Cielo 500ml.
+Row 028: A: Impacto en el SUS | D: Los participantes que no pudieron usar la voz indicaron en el SUS (pregunta 7: 'La mayoria de personas aprenderia a usarla rapidamente') que esta limitacion afecto negativamente su percepcion. Sin este factor, el puntaje SUS estimado seria ~75-78 puntos (Grado A).
+Row 029: A: Accion correctiva | D: Se debe agregar al flujo de onboarding de la app una pantalla que configure automaticamente el idioma de reconocimiento de voz en es-BO o que muestre instrucciones claras al usuario para hacerlo manualmente.
+Row 032: A: Documento elaborado por: Grupo 315 WHISPER  |  Luz Laredo | Jairo Guzman | Valentina Trigo  |  Stakeholder: Ing. Claudia Urena Hinojosa  |  Fecha: Junio 2026  |  Sprint 4 — Pruebas de Usabilidad

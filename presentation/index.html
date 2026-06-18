@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preventista Inteligente AJE — Presentación Corporativa</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- Ionicons Font -->
+  <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+</head>
+<body>
+
+  <div class="presentation-container">
+
+    <!-- NAVIGATION CONTROLS -->
+    <div class="nav-controls">
+      <button class="nav-btn" id="prev-btn" aria-label="Anterior">&#8592;</button>
+      <div class="progress-indicator"></div>
+      <button class="nav-btn" id="next-btn" aria-label="Siguiente">&#8594;</button>
+    </div>
+
+    <!-- SLIDE 1: PORTADA -->
+    <section class="slide active">
+      <div class="slide-cover animate-in">
+        <div class="logo-container">
+          <span class="aje-logo-badge">AJE</span>
+          <span class="highlight-text" style="font-family: var(--font-title); font-weight: 800; font-size: 1.25rem;">BOLIVIA</span>
+        </div>
+        <h1 class="cover-title" style="font-size: 3.8rem;">Pedidos más simples para las tiendas. Mayor visibilidad comercial para AJE.</h1>
+        <p class="cover-tagline" style="font-size: 1.35rem; max-width: 800px; margin-bottom: 2rem;">
+          <strong style="color: white;">Preventista Inteligente AJE:</strong> Canal digital de pedidos por voz y chat que complementa el trabajo del preventista y centraliza la información operativa.
+        </p>
+        <div class="slide-academic-badge" style="font-size: 0.75rem; color: var(--color-text-muted); opacity: 0.85; border-top: 1px solid var(--color-border); padding-top: 1rem; margin-top: 2rem;">
+          <span>Proyecto desarrollado en el marco académico de: <strong>UNIVALLE</strong></span>
+          <span style="opacity: 0.5; margin: 0 8px;">|</span>
+          <span>Desarrollado por: (Luz E. Hinojosa, Jairo Guzmán, Valentina Trigo)</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 2: LA OPORTUNIDAD COMERCIAL -->
+    <section class="slide">
+      <div class="slide-header animate-in">
+        <h2 class="slide-title">La necesidad de reposición no siempre coincide con la visita programada</h2>
+        <p class="slide-subtitle">El canal presencial es fundamental, pero puede complementarse con una alternativa digital disponible entre visitas.</p>
+      </div>
+      <div class="grid-3 animate-in delay-1">
+        <div class="glass-card problem-card">
+          <div class="icon-box red" style="color: var(--color-danger); font-weight: bold;">1</div>
+          <h3 class="card-title">Pedidos entre visitas</h3>
+          <p class="card-desc">Atención de stock crítico antes de la fecha programada para la siguiente visita física del preventista.</p>
+        </div>
+        <div class="glass-card problem-card">
+          <div class="icon-box blue" style="color: var(--color-secondary); font-weight: bold;">2</div>
+          <h3 class="card-title">Registro manual o disperso</h3>
+          <p class="card-desc">Reducción del tiempo dedicado a transcribir pedidos recibidos por canales informales.</p>
+        </div>
+        <div class="glass-card problem-card">
+          <div class="icon-box purple" style="color: var(--color-accent); font-weight: bold;">3</div>
+          <h3 class="card-title">Visibilidad operativa</h3>
+          <p class="card-desc">Centralización de solicitudes en un único canal digital directo para facilitar la distribución.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 3: LA SOLUCIÓN -->
+    <section class="slide">
+      <div class="slide-header animate-in">
+        <h2 class="slide-title">Un asistente digital de preventa disponible cuando la tienda lo necesita</h2>
+        <p class="slide-subtitle">La tienda realiza su pedido por voz o chat; el sistema interpreta la solicitud, valida el catálogo y genera un borrador.</p>
+      </div>
+      <div class="grid-2">
+        <div class="solution-left animate-in delay-1">
+          <span class="solution-badge">Asistente Digital</span>
+          <p class="solution-p">
+            Un asistente virtual conversacional que permite a los tenderos dictar pedidos por voz y chat con regionalismos locales.
+          </p>
+          <div class="feature-list">
+            <div class="feature-item">
+              <div class="feature-icon-wrapper">-</div>
+              <div class="feature-text">
+                <h4>Pedido conversacional</h4>
+                <p>Dictado o escritura del pedido usando expresiones cotidianas y notas de voz rápidas.</p>
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon-wrapper">-</div>
+              <div class="feature-text">
+                <h4>Confirmación previa</h4>
+                <p>Desglose detallado de productos, cantidades y total en pantalla para revisión antes del envío.</p>
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon-wrapper">-</div>
+              <div class="feature-text">
+                <h4>Información centralizada</h4>
+                <p>Registro automático de las órdenes confirmadas en el panel administrativo de AJE.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="solution-right animate-in delay-2" style="display: flex; justify-content: center; width: 100%;">
+          <!-- REAL MOBILE APP MOCKUP (REPLICA HTML/CSS DE LA APP) -->
+          <div class="phone-mockup" style="transform: scale(0.95); margin: 0 auto; pointer-events: none;">
+            <!-- Header -->
+            <div class="phone-header">
+              <div class="phone-header-avatar">
+                <ion-icon name="chatbubble-ellipses"></ion-icon>
+              </div>
+              <div class="phone-header-copy">
+                <span class="phone-header-title">Preventista AJE</span>
+                <span class="phone-header-status">En línea para tomar pedidos</span>
+              </div>
+              <div class="phone-header-icon">
+                <ion-icon name="cart-outline" style="font-size: 20px;"></ion-icon>
+              </div>
+            </div>
+ 
+            <!-- Shortcuts Row -->
+            <div class="phone-shortcuts">
+              <div class="phone-shortcut-btn">
+                <ion-icon name="add-circle-outline" style="color: var(--color-accent); font-size: 14px;"></ion-icon>
+                Nuevo pedido
+              </div>
+              <div class="phone-shortcut-btn">
+                <ion-icon name="receipt-outline" style="color: var(--color-accent); font-size: 14px;"></ion-icon>
+                Pedidos
+              </div>
+              <div class="phone-shortcut-btn">
+                <ion-icon name="storefront-outline" style="color: var(--color-accent); font-size: 14px;"></ion-icon>
+                Sucursales
+              </div>
+            </div>
+ 
+            <!-- Chat Area -->
+            <div class="phone-chat-area" style="padding-top: 0.5rem;">
+              <!-- Bubble 2 (Agent) -->
+              <div class="phone-bubble agent">
+                <div class="phone-bubble-text">¡Listo! Ya armé el borrador de tu pedido por un total de Bs. 56.00. Por favor, revísalo en tu pantalla y presiona confirmar para agendar su despacho.</div>
+                <div class="phone-message-actions">
+                  <div class="phone-message-action">
+                    <div class="phone-action-icon-wrap">
+                      <ion-icon name="checkmark-circle-outline"></ion-icon>
+                    </div>
+                    <div class="phone-action-copy">
+                      <div class="phone-action-title">Confirmar y enviar a AJE</div>
+                      <div class="phone-action-meta">Tienda San Miguel - borrador - Bs. 56.00 - Entrega Viernes</div>
+                    </div>
+                    <ion-icon name="chevron-forward" style="color: #b8acd8; font-size: 12px;"></ion-icon>
+                  </div>
+                </div>
+                <div class="phone-feedback-row">
+                  <button class="phone-feedback-btn active"><ion-icon name="thumbs-up"></ion-icon></button>
+                  <button class="phone-feedback-btn"><ion-icon name="thumbs-down-outline"></ion-icon></button>
+                </div>
+                <div class="phone-bubble-meta">13:02</div>
+              </div>
+              
+              <!-- Bubble 1 (User) - Voice Note Bubble -->
+              <div class="phone-bubble user">
+                <div class="phone-voice-bubble-content">
+                  <div class="phone-play-btn">
+                    <ion-icon name="play-outline" style="font-size: 12px; margin-left: 1px; color: white;"></ion-icon>
+                  </div>
+                  <div class="phone-waveform">
+                    <div class="phone-wave-bar" style="height: 10px;"></div>
+                    <div class="phone-wave-bar" style="height: 16px;"></div>
+                    <div class="phone-wave-bar" style="height: 22px;"></div>
+                    <div class="phone-wave-bar" style="height: 14px;"></div>
+                    <div class="phone-wave-bar" style="height: 18px;"></div>
+                    <div class="phone-wave-bar" style="height: 26px;"></div>
+                    <div class="phone-wave-bar" style="height: 12px;"></div>
+                    <div class="phone-wave-bar" style="height: 20px;"></div>
+                    <div class="phone-wave-bar" style="height: 24px;"></div>
+                    <div class="phone-wave-bar" style="height: 16px;"></div>
+                    <div class="phone-wave-bar" style="height: 10px;"></div>
+                  </div>
+                  <span class="phone-voice-duration">0:05</span>
+                </div>
+                <div class="phone-voice-transcript">
+                  "Quiero 4 Big Cola de 2 litros y 2 Volt para el viernes."
+                </div>
+                <div class="phone-bubble-meta">13:01</div>
+              </div>
+            </div>
+ 
+            <!-- Suggestions Wrap -->
+            <div class="phone-suggestions-wrap">
+              <div class="phone-suggestions-scroll">
+                <div class="phone-suggestion-chip">Menu <ion-icon name="send" style="font-size: 9px; margin-left: 4px; opacity: 0.7;"></ion-icon></div>
+                <div class="phone-suggestion-chip">Lista de pedidos <ion-icon name="send" style="font-size: 9px; margin-left: 4px; opacity: 0.7;"></ion-icon></div>
+                <div class="phone-suggestion-chip">Pedidos pendientes <ion-icon name="send" style="font-size: 9px; margin-left: 4px; opacity: 0.7;"></ion-icon></div>
+              </div>
+            </div>
+ 
+            <!-- Composer Footer -->
+            <div class="phone-composer-wrap">
+              <div class="phone-composer">
+                <div class="phone-composer-add">
+                  <ion-icon name="add"></ion-icon>
+                </div>
+                <input type="text" class="phone-composer-input" value="Escribe o dicta un pedido" disabled style="opacity: 0.6;">
+              </div>
+              <button class="phone-composer-btn mic">
+                <ion-icon name="mic"></ion-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 4: DEMOSTRACIÓN DEL FLUJO -->
+    <section class="slide">
+      <div class="slide-header animate-in">
+        <h2 class="slide-title">Realizar un pedido puede ser tan sencillo como enviar un audio</h2>
+        <p class="slide-subtitle">Demostración del recorrido completo desde la solicitud hasta la confirmación.</p>
+      </div>
+      <div class="grid-2">
+        
+        <!-- Interactive Smartphone Simulator (Match with ChatScreen.js) -->
+        <div class="animate-in delay-1">
+          <div class="phone-mockup">
+            <!-- Header -->
+            <div class="phone-header">
+              <div class="phone-header-avatar">
+                <ion-icon name="chatbubble-ellipses"></ion-icon>
+              </div>
+              <div class="phone-header-copy">
+                <span class="phone-header-title">Preventista AJE</span>
+                <span class="phone-header-status">En línea para tomar pedidos</span>
+              </div>
+              <div class="phone-header-icon" onclick="alert('Abriendo Catálogo de Productos...')">
+                <ion-icon name="cart-outline" style="font-size: 20px;"></ion-icon>
+              </div>
+            </div>
+
+            <!-- Shortcuts Row -->
+            <div class="phone-shortcuts">
+              <button class="phone-shortcut-btn" onclick="alert('Iniciando nuevo borrador de pedido...')">
+                <ion-icon name="add-circle-outline" style="color: var(--color-accent); font-size: 15px;"></ion-icon>
+                Nuevo pedido
+              </button>
+              <button class="phone-shortcut-btn" onclick="alert('Cargando historial de pedidos...')">
+                <ion-icon name="receipt-outline" style="color: var(--color-accent); font-size: 15px;"></ion-icon>
+                Pedidos
+              </button>
+              <button class="phone-shortcut-btn" onclick="alert('Abriendo listado de sucursales...')">
+                <ion-icon name="storefront-outline" style="color: var(--color-accent); font-size: 15px;"></ion-icon>
+                Sucursales
+              </button>
+            </div>
+            
+            <!-- Chat List Area -->
+            <div class="phone-chat-area" id="chat-area">
+              <!-- Initial Intro Message -->
+              <div class="phone-bubble agent">
+                <div class="phone-bubble-text">Hola, soy tu preventista. Puedes escribir o tocar el micrófono para dictar un pedido.</div>
+                <div class="phone-bubble-meta">13:00</div>
+              </div>
+            </div>
+
+            <!-- Voice Overlay Bar -->
+            <div class="phone-voice-bar" id="voice-bar" style="display: none;">
+              <ion-icon name="mic" class="phone-voice-icon"></ion-icon>
+              <span class="phone-voice-text" id="voice-text">Escuchando pedido...</span>
+            </div>
+
+            <!-- Suggestions Wrap -->
+            <div class="phone-suggestions-wrap" id="suggestions-wrap">
+              <div class="phone-suggestions-scroll">
+                <div class="phone-suggestion-chip">Menu</div>
+                <div class="phone-suggestion-chip">Lista de pedidos</div>
+                <div class="phone-suggestion-chip">Pedidos pendientes</div>
+                <div class="phone-suggestion-chip">Pedidos confirmados</div>
+              </div>
+            </div>
+            
+            <!-- Composer Footer -->
+            <div class="phone-composer-wrap">
+              <div class="phone-composer">
+                <div class="phone-composer-add" onclick="alert('Abriendo catálogo visual...')">
+                  <ion-icon name="add" style="color: var(--color-text-muted);"></ion-icon>
+                </div>
+                <input type="text" class="phone-composer-input" id="phone-input" placeholder="Escribe o dicta un pedido" readonly>
+              </div>
+              <button class="phone-composer-btn mic" id="phone-mic-btn">
+                <ion-icon name="mic" id="phone-btn-icon"></ion-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Controls & Predefined phrases -->
+        <div class="simulator-controls animate-in delay-2">
+          <!-- Step flow list -->
+          <div class="flow-steps-card" style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--color-border); border-radius: 16px; padding: 1.25rem; margin-bottom: 1.5rem;">
+            <h4 style="font-family: var(--font-title); color: white; margin-bottom: 0.75rem; font-size: 1.1rem;">Recorrido del Pedido:</h4>
+            <ol style="color: var(--color-text-muted); font-size: 0.85rem; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.35rem;">
+              <li>La tienda dicta o escribe su pedido por voz o chat.</li>
+              <li>El sistema reconoce de forma automatizada productos y cantidades.</li>
+              <li>Se genera y presenta un borrador del pedido en pantalla.</li>
+              <li>El usuario revisa y ajusta la información de la orden.</li>
+              <li>El pedido se confirma y queda registrado en la consola de AJE.</li>
+            </ol>
+          </div>
+
+          <h3 style="font-family: var(--font-title); color: white; margin-bottom: 1rem; font-size: 1.2rem;">Casos de Prueba Interactivos:</h3>
+          
+          <button class="demo-phrase-btn" data-type="rules">
+            <span class="phrase-tag rules" style="background: rgba(79, 209, 255, 0.15); color: var(--color-secondary);">Reconocimiento directo</span>
+            <div>
+              <strong>"Quiero 4 Big Cola de 2 litros y 2 Volt para el viernes"</strong>
+              <p style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 0.25rem;">Extracción directa y validación del catálogo.</p>
+            </div>
+          </button>
+          
+          <button class="demo-phrase-btn" data-type="llm">
+            <span class="phrase-tag llm" style="background: rgba(155, 124, 255, 0.15); color: var(--color-accent);">Interpretación contextual</span>
+            <div>
+              <strong>"sielito el más pequeñito me mandas porfa dos y un cifrut"</strong>
+              <p style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 0.25rem;">Interpretación de expresiones coloquiales y cantidades.</p>
+            </div>
+          </button>
+          
+          <button class="demo-phrase-btn" data-type="reject">
+            <span class="phrase-tag reject" style="background: rgba(239, 68, 68, 0.15); color: var(--color-danger);">Validación del catálogo</span>
+            <div>
+              <strong>"quiero una docena de chelas bien frías y 2 big cola"</strong>
+              <p style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 0.25rem;">Filtrado de productos ajenos al catálogo de AJE.</p>
+            </div>
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SLIDE 5: VALOR PARA AJE -->
+    <section class="slide">
+      <div class="slide-header animate-in">
+        <h2 class="slide-title">Una solución con beneficios para cada actor del proceso</h2>
+        <p class="slide-subtitle">El sistema conecta la necesidad de la tienda con la operación comercial de AJE.</p>
+      </div>
+      <div class="grid-3 animate-in delay-1">
+        
+        <!-- Para la Tienda -->
+        <div class="glass-card problem-card" style="border-top: 4px solid var(--color-secondary);">
+          <div class="icon-box blue" style="color: var(--color-secondary); font-weight: bold; font-size: 1.25rem;">A</div>
+          <h3 class="card-title" style="color: var(--color-secondary);">Para la Tienda</h3>
+          <ul style="color: var(--color-text-muted); font-size: 0.9rem; list-style-type: none; display: flex; flex-direction: column; gap: 0.75rem; padding: 0; margin-top: 1rem;">
+            <li>- <strong>Reposición inmediata:</strong> Pedidos rápidos sin esperar al preventista.</li>
+            <li>- <strong>Precios claros:</strong> Transparencia total de montos en pantalla.</li>
+            <li>- <strong>Autonomía:</strong> Consulta del estado de entrega desde el chat.</li>
+          </ul>
+        </div>
+
+        <!-- Para el Preventista -->
+        <div class="glass-card problem-card" style="border-top: 4px solid var(--color-accent);">
+          <div class="icon-box purple" style="color: var(--color-accent-light); font-weight: bold; font-size: 1.25rem;">B</div>
+          <h3 class="card-title" style="color: var(--color-accent-light);">Para el Preventista</h3>
+          <ul style="color: var(--color-text-muted); font-size: 0.9rem; list-style-type: none; display: flex; flex-direction: column; gap: 0.75rem; padding: 0; margin-top: 1rem;">
+            <li>- <strong>Menos burocracia:</strong> Menor tiempo en transcripción de pedidos rutinarios.</li>
+            <li>- <strong>Mejor preparación:</strong> Contexto del cliente antes de la visita física.</li>
+            <li>- <strong>Foco comercial:</strong> Más tiempo para negociación y exhibición en tienda.</li>
+          </ul>
+        </div>
+
+        <!-- Para AJE -->
+        <div class="glass-card problem-card" style="border-top: 4px solid var(--color-success);">
+          <div class="icon-box green" style="background: rgba(34, 197, 94, 0.15); color: var(--color-success); box-shadow: 0 0 15px rgba(34, 197, 94, 0.25); font-weight: bold; font-size: 1.25rem;">C</div>
+          <h3 class="card-title" style="color: var(--color-success);">Para AJE</h3>
+          <ul style="color: var(--color-text-muted); font-size: 0.9rem; list-style-type: none; display: flex; flex-direction: column; gap: 0.75rem; padding: 0; margin-top: 1rem;">
+            <li>- <strong>Centralización:</strong> Registro de pedidos directo en la base de datos.</li>
+            <li>- <strong>Trazabilidad:</strong> Monitoreo logístico de despachos desde la consola.</li>
+            <li>- <strong>Demanda:</strong> Datos de compra útiles para planificar distribución.</li>
+          </ul>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SLIDE 6: CONTROL OPERATIVO -->
+    <section class="slide">
+      <div class="slide-header animate-in">
+        <h2 class="slide-title">Cada pedido queda visible y gestionable desde un solo panel</h2>
+        <p class="slide-subtitle">La consola administrativa permite revisar pedidos, clientes, productos y estados desde una fuente centralizada.</p>
+      </div>
+      <div class="grid-2" style="grid-template-columns: 1.25fr 0.75fr;">
+        <div class="panel-image-container animate-in delay-1" style="position: relative;">
+          <!-- REAL REACT DASHBOARD MOCKUP -->
+          <div class="panel-mockup">
+            <!-- Sidebar -->
+            <div class="panel-sidebar">
+              <div class="panel-logo">
+                <h1>AJE Panel</h1>
+                <span>Gestión de Pedidos</span>
+              </div>
+              <div class="panel-nav">
+                <a class="panel-link active">
+                  <ion-icon name="grid-outline"></ion-icon>
+                  Dashboard
+                </a>
+                <a class="panel-link">
+                  <ion-icon name="cart-outline"></ion-icon>
+                  Pedidos
+                </a>
+                <a class="panel-link">
+                  <ion-icon name="people-outline"></ion-icon>
+                  Clientes
+                </a>
+                <a class="panel-link">
+                  <ion-icon name="bar-chart-outline"></ion-icon>
+                  Reportes
+                </a>
+                <a class="panel-link">
+                  <ion-icon name="cube-outline"></ion-icon>
+                  Productos
+                </a>
+                <a class="panel-link">
+                  <ion-icon name="person-outline"></ion-icon>
+                  Perfil
+                </a>
+              </div>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="panel-main">
+              <div class="panel-page-header">
+                <h3>Dashboard</h3>
+                <p>Resumen de pedidos del sistema</p>
+              </div>
+
+              <!-- Metric Cards Grid -->
+              <div class="panel-cards-grid">
+                <div class="panel-stat-card">
+                  <div class="panel-stat-icon" style="background: var(--color-accent-soft); color: var(--color-accent-light);">
+                    <ion-icon name="cart-outline"></ion-icon>
+                  </div>
+                  <div class="panel-stat-info">
+                    <h4 id="panel-stat-total">42</h4>
+                    <p>Total pedidos</p>
+                  </div>
+                </div>
+                
+                <div class="panel-stat-card">
+                  <div class="panel-stat-icon" style="background: var(--color-warning-bg); color: var(--color-warning);">
+                    <ion-icon name="time-outline"></ion-icon>
+                  </div>
+                  <div class="panel-stat-info">
+                    <h4 id="panel-stat-pending">12</h4>
+                    <p>Pendientes</p>
+                  </div>
+                </div>
+
+                <div class="panel-stat-card">
+                  <div class="panel-stat-icon" style="background: var(--color-success-bg); color: var(--color-success);">
+                    <ion-icon name="checkmark-circle-outline"></ion-icon>
+                  </div>
+                  <div class="panel-stat-info">
+                    <h4 id="panel-stat-confirmed">25</h4>
+                    <p>Confirmados</p>
+                  </div>
+                </div>
+
+                <div class="panel-stat-card">
+                  <div class="panel-stat-icon" style="background: var(--color-danger-bg); color: var(--color-danger);">
+                    <ion-icon name="close-circle-outline"></ion-icon>
+                  </div>
+                  <div class="panel-stat-info">
+                    <h4 id="panel-stat-rejected">5</h4>
+                    <p>Rechazados</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Recent Orders Table -->
+              <div class="panel-table-wrap">
+                <div class="panel-table-header">
+                  <h4>Pedidos recientes</h4>
+                  <span style="font-size: 0.62rem; color: var(--color-accent); font-weight: 600;">(Haz clic en una fila)</span>
+                </div>
+                <table class="panel-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Tienda</th>
+                      <th>Total</th>
+                      <th>Estado</th>
+                      <th>Fecha</th>
+                    </tr>
+                  </thead>
+                  <tbody id="panel-table-body">
+                    <!-- Loaded dynamically via JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Table Click Detail Modal Popup -->
+            <div class="panel-detail-modal" id="panel-detail-modal">
+              <span class="panel-modal-close" id="panel-modal-close">&times;</span>
+              <div class="panel-modal-title" id="pm-id">Pedido #AJE-9823</div>
+              <div class="panel-modal-row">
+                <span>Tienda:</span>
+                <span id="pm-store">Tienda San Miguel</span>
+              </div>
+              <div class="panel-modal-row">
+                <span>Total:</span>
+                <span id="pm-total">Bs. 56.00</span>
+              </div>
+              <div class="panel-modal-row">
+                <span>Estado:</span>
+                <span id="pm-status">Borrador</span>
+              </div>
+              <div class="panel-modal-row">
+                <span>Fecha:</span>
+                <span id="pm-date">17/06/2026</span>
+              </div>
+              <div class="panel-modal-row" style="margin-top: 8px; flex-direction: column; align-items: flex-start; gap: 4px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 6px;">
+                <span style="font-weight: bold; color: white;">Productos:</span>
+                <span id="pm-items" style="font-weight: normal; color: var(--color-text-muted); line-height: 1.3; font-size: 0.65rem;">Big Cola 2L (x4) / Volt 300ml (x2)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel-info animate-in delay-2">
+          <div class="panel-feature">
+            <div>
+              <h4 style="color:white; margin-bottom:0.25rem;">Visibilidad operativa</h4>
+              <p style="font-size:0.9rem; color:var(--color-text-muted);">Revisión centralizada del listado de pedidos generados desde el asistente.</p>
+            </div>
+          </div>
+          <div class="panel-feature">
+            <div>
+              <h4 style="color:white; margin-bottom:0.25rem;">Aprobación de despachos</h4>
+              <p style="font-size:0.9rem; color:var(--color-text-muted);">Los borradores confirmados se registran como pedidos pendientes para distribución.</p>
+            </div>
+          </div>
+          <div class="panel-feature">
+            <div>
+              <h4 style="color:white; margin-bottom:0.25rem;">Consola centralizada</h4>
+              <p style="font-size:0.9rem; color:var(--color-text-muted);">Integración del panel web con la base de datos corporativa Supabase y autenticación segura JWT.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 7: VALIDACIÓN REALIZADA -->
+    <section class="slide">
+      <div class="slide-header animate-in">
+        <h2 class="slide-title">Probamos el sistema, identificamos fricciones y aplicamos mejoras</h2>
+        <p class="slide-subtitle">La evaluación permitió medir la facilidad de uso y corregir problemas antes de proponer un piloto operativo.</p>
+      </div>
+      <div class="grid-2" style="grid-template-columns: 1fr 1fr; gap: 2.5rem;">
+        
+        <div class="animate-in delay-1" style="display: flex; flex-direction: column; gap: 1.25rem;">
+          <h3 style="font-family: var(--font-title); color: white; font-size: 1.5rem;">Resultados de Usabilidad</h3>
+          <p style="color: var(--color-text-muted); font-size: 0.9rem; line-height: 1.5;">
+            Evaluación académica con 33 participantes: 89.2% de pedidos completados exitosamente, con un tiempo promedio de registro de 92.4 segundos.
+          </p>
+          
+          <!-- Bar charts of SUS scores -->
+          <div class="usability-chart-box">
+            <div class="chart-bar-wrap">
+              <div class="chart-bar-label">
+                <span>Español Nativo (Bolivia)</span>
+                <span class="highlight-text">79.4 / 100 (Muestra local)</span>
+              </div>
+              <div class="chart-bar-outer">
+                <div class="chart-bar-inner success" style="width: 79.4%;"></div>
+              </div>
+            </div>
+
+            <div class="chart-bar-wrap">
+              <div class="chart-bar-label">
+                <span>Español Limitado (EEUU Muestra)</span>
+                <span class="red-text">36.6 / 100 (Fricción por acento)</span>
+              </div>
+              <div class="chart-bar-outer">
+                <div class="chart-bar-inner danger" style="width: 36.6%;"></div>
+              </div>
+            </div>
+
+            <div class="chart-bar-wrap">
+              <div class="chart-bar-label">
+                <span>Promedio SUS Global</span>
+                <span class="purple-text">58.6 / 100 (Oportunidad de mejora)</span>
+              </div>
+              <div class="chart-bar-outer">
+                <div class="chart-bar-inner warning" style="width: 58.6%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="font-size: 0.75rem; color: var(--color-text-muted); border-left: 3px solid var(--color-warning); padding-left: 8px; font-style: italic; line-height: 1.35; margin-top: 0.5rem;">
+            *Nota de alcance: La muestra corresponde a una validación académica de usabilidad. Los resultados no representan todavía una validación comercial con la red de tiendas de AJE.
+          </div>
+        </div>
+
+        <!-- Corrected problems list -->
+        <div class="animate-in delay-2" style="display: flex; flex-direction: column; gap: 0.75rem;">
+          <h3 style="font-family: var(--font-title); color: white; font-size: 1.4rem;">Registro de Aprendizajes</h3>
+          <div class="findings-log">
+            <div class="finding-card">
+              <div class="finding-header">
+                <span class="finding-title">1. Reconocimiento local</span>
+                <span class="finding-badge corrected">Ajustado</span>
+              </div>
+              <p class="finding-desc">Configuración del motor de voz para español boliviano ('es-BO').</p>
+            </div>
+            
+            <div class="finding-card">
+              <div class="finding-header">
+                <span class="finding-title">2. Tolerancia a errores</span>
+                <span class="finding-badge corrected">Ajustado</span>
+              </div>
+              <p class="finding-desc">Emparejamiento difuso en nlp.py para resolver variaciones de nombres.</p>
+            </div>
+
+            <div class="finding-card">
+              <div class="finding-header">
+                <span class="finding-title">3. Claridad de interfaz</span>
+                <span class="finding-badge corrected">Ajustado</span>
+              </div>
+              <p class="finding-desc">Indicadores de carga y confirmación visual de borradores en pantalla.</p>
+            </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SLIDE 8: PROPUESTA DE PILOTO -->
+    <section class="slide">
+      <div class="slide-header animate-in">
+        <h2 class="slide-title">El siguiente paso es medir el impacto en una ruta real</h2>
+        <p class="slide-subtitle">Proponemos una prueba controlada para comparar el proceso actual con el canal digital complementario.</p>
+      </div>
+      <div class="grid-2">
+        <div class="animate-in delay-1" style="display:flex; flex-direction:column; justify-content:center;">
+          <h3 style="font-family: var(--font-title); color: white; margin-bottom: 0.75rem; font-size: 1.4rem;">Fases del Piloto Propuesto</h3>
+          
+          <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem;">
+            <div style="background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: 10px; border-left: 3px solid var(--color-secondary);">
+              <strong style="color: white; font-size: 0.85rem;">Fase 1. Preparación:</strong>
+              <p style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 2px;">Selección de tiendas, catálogo oficial y definición de línea base operativa.</p>
+            </div>
+            <div style="background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: 10px; border-left: 3px solid var(--color-accent);">
+              <strong style="color: white; font-size: 0.85rem;">Fase 2. Ejecución:</strong>
+              <p style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 2px;">Uso activo del asistente por voz y chat para reponer productos entre visitas.</p>
+            </div>
+            <div style="background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: 10px; border-left: 3px solid var(--color-success);">
+              <strong style="color: white; font-size: 0.85rem;">Fase 3. Evaluación:</strong>
+              <p style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 2px;">Comparación de tiempos de registro, errores y nivel de adopción.</p>
+            </div>
+          </div>
+
+          <h4 style="font-family: var(--font-title); color: white; font-size: 0.95rem; margin-bottom: 0.4rem;">Indicadores Clave:</h4>
+          <ul style="color: var(--color-text-muted); font-size: 0.8rem; padding-left: 1.25rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.25rem; list-style-type: square;">
+            <li>Tiempo de registro del pedido</li>
+            <li>Tasa de pedidos completados</li>
+            <li>Pedidos fuera de la visita</li>
+            <li>Precisión del catálogo</li>
+            <li>Adopción y satisfacción</li>
+            <li>Frecuencia de reposición</li>
+          </ul>
+        </div>
+        
+        <!-- ROI SAVINGS CALCULATOR (TRADITIONAL VS DIGITAL) -->
+        <div class="animate-in delay-2">
+          <div class="roi-calculator">
+            <h4 style="font-family: var(--font-title); color: white; text-align: center; margin-bottom: 0.75rem; font-size: 1.1rem;">Simulador de impacto potencial</h4>
+            
+            <div class="roi-slider-wrap" style="gap: 1.25rem;">
+              <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <div class="roi-slider-header">
+                  <span class="roi-slider-title" style="font-size: 0.85rem;">Tiendas Activas en Ruta</span>
+                  <span class="roi-slider-val" id="roi-slider-stores" style="font-size: 1.25rem;">500</span>
+                </div>
+                <input type="range" class="roi-range" id="roi-range-stores" min="50" max="2000" step="50" value="500">
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <div class="roi-slider-header">
+                  <span class="roi-slider-title" style="font-size: 0.85rem;">Visitas Físicas Mensuales (por tienda)</span>
+                  <span class="roi-slider-val" id="roi-slider-visits" style="font-size: 1.25rem; color: var(--color-accent);">4</span>
+                </div>
+                <input type="range" class="roi-range" id="roi-range-visits" min="1" max="8" step="1" value="4">
+              </div>
+            </div>
+            
+            <div class="roi-results">
+              <div class="glass-card roi-card" style="background: rgba(239, 68, 68, 0.03); border-color: rgba(239, 68, 68, 0.12); padding: 0.75rem 1rem;">
+                <span class="roi-card-title" style="font-size: 0.75rem;">Costo de Preventa Física Proyectado</span>
+                <span class="roi-card-cost" style="color: var(--color-danger); font-size: 1.25rem;" id="roi-cost-physical">Bs. 30,000.00</span>
+                <span style="font-size: 0.6rem; color: var(--color-text-muted); margin-top: 2px;">Simulación de viáticos y traslados</span>
+              </div>
+              
+              <div class="glass-card roi-card" style="background: rgba(34, 197, 94, 0.04); border-color: rgba(34, 197, 94, 0.12); padding: 0.75rem 1rem;">
+                <span class="roi-card-title" style="font-size: 0.75rem;">Costo de Operación Digital Referencial</span>
+                <span class="roi-card-cost" style="color: var(--color-success); font-family: var(--font-title); font-size: 1.25rem;" id="roi-cost-digital">Bs. 1,000.00</span>
+                <span style="font-size: 0.6rem; color: var(--color-text-muted); margin-top: 2px;">Infraestructura de servidor local</span>
+              </div>
+              
+              <div class="roi-savings-hero" style="padding: 0.75rem; margin-top: 0.5rem; border-radius: 12px;">
+                <div class="roi-savings-title" style="font-size: 0.75rem;">Diferencial de Costo Potencial</div>
+                <div class="roi-savings-val" id="roi-savings-val" style="font-size: 1.6rem; margin: 2px 0;">Bs. 29,000.00</div>
+                <div class="roi-savings-sub" id="roi-savings-time" style="font-size: 0.65rem;">Simulación de horas de traslado optimizadas</div>
+              </div>
+            </div>
+
+            <div style="font-size: 0.65rem; color: var(--color-text-muted); text-align: center; margin-top: 0.5rem; line-height: 1.3; font-style: italic;">
+              Los valores son referenciales y deben validarse con información operativa de AJE.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 9: CIERRE COMERCIAL -->
+    <section class="slide">
+      <div class="slide-header animate-in">
+        <h2 class="slide-title">Validemos juntos una nueva forma de recibir pedidos</h2>
+        <p class="slide-subtitle">El Preventista Inteligente no reemplaza la relación comercial. La fortalece con un canal adicional, disponible, trazable y fácil de utilizar.</p>
+      </div>
+      <div class="grid-2" style="grid-template-columns: 1.1fr 0.9fr; gap: 3rem; align-items: stretch;">
+        <div class="contact-info animate-in delay-1" style="display: flex; flex-direction: column; justify-content: center; gap: 1.25rem;">
+          <h3 style="color:white; font-size: 1.5rem;">Propuesta de Colaboración</h3>
+          <p style="color: var(--color-text-muted); font-size: 0.95rem; line-height: 1.6;">
+            Coordinemos una sesión de trabajo para delimitar el alcance y definir la viabilidad de una prueba piloto controlada.
+          </p>
+          
+          <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--color-accent-soft); display: flex; align-items: center; justify-content: center; color: var(--color-accent); font-weight: bold; font-size: 0.85rem;">1</div>
+              <span style="color: var(--color-text-main); font-size: 0.9rem;">Validar la viabilidad del flujo conversacional con el catálogo de AJE.</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--color-accent-soft); display: flex; align-items: center; justify-content: center; color: var(--color-accent); font-weight: bold; font-size: 0.85rem;">2</div>
+              <span style="color: var(--color-text-main); font-size: 0.9rem;">Seleccionar una muestra acotada de tiendas y una ruta de distribución.</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--color-accent-soft); display: flex; align-items: center; justify-content: center; color: var(--color-accent); font-weight: bold; font-size: 0.85rem;">3</div>
+              <span style="color: var(--color-text-main); font-size: 0.9rem;">Medir los resultados operativos para decidir futuras etapas de integración.</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="glass-card contact-form animate-in delay-2" style="display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 2rem; text-align: center; gap: 1rem;">
+          <div class="icon-box green" style="background: rgba(34, 197, 94, 0.15); color: var(--color-success); font-weight: bold; font-size: 1.25rem; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 0.5rem;">P</div>
+          <h4 style="color:white; font-family: var(--font-title); font-size:1.35rem; margin-bottom: 0.25rem;">¿Deseas iniciar la evaluación?</h4>
+          <p style="font-size:0.85rem; color:var(--color-text-muted); line-height: 1.5;">Revisemos la solución técnica y definamos en conjunto los parámetros del piloto.</p>
+          <button class="submit-btn" style="width: 100%; margin-top: 1rem; border-radius: 30px; font-weight: bold;" onclick="alert('Propuesta registrada. Estaremos listos para coordinar la evaluación técnica con el equipo de AJE Bolivia.')">Evaluar Propuesta de Piloto</button>
+        </div>
+      </div>
+      
+      <!-- Footer horizontal para el equipo -->
+      <div style="width: 100%; border-top: 1px solid var(--color-border); padding-top: 1rem; margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--color-text-muted);">
+        <span>Equipo desarrollador:</span>
+        <div style="display: flex; gap: 1.5rem;">
+          <span>- <strong>Luz Esmeralda Hinojosa L.</strong> (Experiencia Móvil)</span>
+          <span>- <strong>Jairo Guzmán</strong> (Backend e IA)</span>
+          <span>- <strong>Valentina Trigo</strong> (Producto y DB)</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 10: ANEXO TÉCNICO -->
+    <section class="slide">
+      <div class="slide-header animate-in">
+        <h2 class="slide-title">Arquitectura preparada para validación y crecimiento</h2>
+        <p class="slide-subtitle">Resumen técnico de la infraestructura modular para asegurar robustez, velocidad y seguridad.</p>
+      </div>
+      <div class="grid-2" style="grid-template-columns: 1fr 1fr; gap: 3rem;">
+        
+        <div class="animate-in delay-1" style="display: flex; flex-direction: column; justify-content: center; gap: 1rem;">
+          <h3 style="color: white; font-family: var(--font-title); font-size: 1.5rem;">Componentes del Sistema</h3>
+          
+          <div class="glass-card problem-card" style="padding: 1.25rem; border-left: 4px solid var(--color-secondary);">
+            <h4 style="color: white; font-size: 0.95rem; margin-bottom: 0.25rem;">Aplicación Móvil</h4>
+            <p style="font-size: 0.8rem; color: var(--color-text-muted);">Desarrollada en React Native / Expo, con interfaz adaptativa para registro de pedidos y visualización de catálogo.</p>
+          </div>
+          
+          <div class="glass-card problem-card" style="padding: 1.25rem; border-left: 4px solid var(--color-accent);">
+            <h4 style="color: white; font-size: 0.95rem; margin-bottom: 0.25rem;">Backend en FastAPI</h4>
+            <p style="font-size: 0.8rem; color: var(--color-text-muted);">Pipeline de procesamiento veloz en Python, implementando enrutamiento y orquestación de datos de catálogo.</p>
+          </div>
+
+          <div class="glass-card problem-card" style="padding: 1.25rem; border-left: 4px solid var(--color-success);">
+            <h4 style="color: white; font-size: 0.95rem; margin-bottom: 0.25rem;">Base de Datos en Supabase</h4>
+            <p style="font-size: 0.8rem; color: var(--color-text-muted);">Centralización de información con PostgreSQL, seguridad mediante RLS (Row Level Security) y autenticación JWT.</p>
+          </div>
+        </div>
+
+        <div class="animate-in delay-2" style="display: flex; flex-direction: column; justify-content: center; gap: 1.25rem;">
+          <h3 style="color: white; font-family: var(--font-title); font-size: 1.5rem;">Estrategia Conversacional</h3>
+          
+          <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--color-border); border-radius: 16px; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+            <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+              <span style="font-size: 1.25rem; color: var(--color-secondary);">-</span>
+              <div>
+                <strong style="color: white; font-size: 0.85rem;">Procesamiento Híbrido:</strong>
+                <p style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 2px;">Capa de reglas iniciales para reconocimiento directo de SKUs, y modelos de lenguaje local para expresiones coloquiales.</p>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+              <span style="font-size: 1.25rem; color: var(--color-accent);">-</span>
+              <div>
+                <strong style="color: white; font-size: 0.85rem;">Seguridad y Privacidad:</strong>
+                <p style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 2px;">Los datos de las transacciones y clientes permanecen centralizados y encriptados en la infraestructura local.</p>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+              <span style="font-size: 1.25rem; color: var(--color-success);">-</span>
+              <div>
+                <strong style="color: white; font-size: 0.85rem;">Escalabilidad:</strong>
+                <p style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 2px;">Diseño modular que facilita la integración con sistemas ERP de facturación o inventario existentes.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

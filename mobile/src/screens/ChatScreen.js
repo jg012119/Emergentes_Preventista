@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { NativeModulesProxy } from 'expo-modules-core';
+import { Directory, Paths } from 'expo-file-system';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { confirmOrder, getChat, getGeneralChat, rateChatMessage, sendMessage } from '../services/api';
@@ -80,6 +80,7 @@ const CHAT_ACTION_PREFIX = '@@action ';
 const ACTIVE_DRAFT_ORDER_KEY = 'preventista.activeDraftOrderId';
 const LEGACY_PENDING_ORDER_TEXT_KEY = 'preventista.pendingOrderText';
 const PENDING_ORDER_TEXT_KEY = 'preventista.pendingOrderText.v2';
+const VOICE_NOTE_DIRECTORY = 'voice-notes';
 
 const ORDER_CONTEXT_RE = /\b(big|cielo|agua|volt|oro|pulp|cifrut|cola|lata|caja|litro|litros|ml|manana|mañana|hoy|tienda|cliente|un|una|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|\d+)\b/i;
 const NON_ORDER_RE = /^(menu|catalogo|catálogo|lista|lista de pedidos|pedidos|estado|seguimiento)$/i;
@@ -93,6 +94,7 @@ const parseMessageParts = (message) => {
   let isVoice = false;
   let voiceText = '';
   let voiceDuration = 0;
+  let voiceUri = null;
 
   let messageToParse = message;
   try {
@@ -101,6 +103,7 @@ const parseMessageParts = (message) => {
       isVoice = true;
       voiceText = jsonParsed.text || '';
       voiceDuration = jsonParsed.duration || 5;
+      voiceUri = typeof jsonParsed.uri === 'string' && jsonParsed.uri ? jsonParsed.uri : null;
       messageToParse = jsonParsed.text || '';
     }
   } catch (_) {}
@@ -124,7 +127,8 @@ const parseMessageParts = (message) => {
     actions,
     isVoice,
     voiceText,
-    voiceDuration
+    voiceDuration,
+    voiceUri,
   };
 };
 
@@ -184,6 +188,16 @@ const getChatActionMeta = (action) => (
     .join(' - ')
 );
 
+const getVoiceNoteDirectoryUri = () => {
+  try {
+    const directory = new Directory(Paths.document, VOICE_NOTE_DIRECTORY);
+    directory.create({ intermediates: true, idempotent: true });
+    return directory.uri;
+  } catch (_) {
+    return null;
+  }
+};
+
 export default function ChatScreen({ route, navigation }) {
   const orderId = route?.params?.orderId ?? null;
   const isOrderChat = Boolean(orderId);
@@ -205,6 +219,9 @@ export default function ChatScreen({ route, navigation }) {
   const autoInterpretRef = useRef(false);
   const autoSendLockedRef = useRef(false);
   const voiceStartRef = useRef(0);
+  const lastAudioUriRef = useRef(null);
+  const isTrackingRecordingRef = useRef(false);
+  const disableVoicePersistenceRef = useRef(false);
   const insets = useSafeAreaInsets();
 
   const scrollToBottom = useCallback(() => {
@@ -334,7 +351,8 @@ export default function ChatScreen({ route, navigation }) {
       ? JSON.stringify({
           is_voice: true,
           text: clean,
-          duration: Math.max(1, Math.round(voiceOptions.duration || 5))
+          duration: Math.max(1, Math.round(voiceOptions.duration || 5)),
+          uri: voiceOptions.uri || null
         })
       : clean;
 
@@ -423,10 +441,11 @@ export default function ChatScreen({ route, navigation }) {
         setRecognizing(false);
         const transcript = lastTranscriptRef.current.trim();
         const durationSeconds = voiceStartRef.current ? Math.max(1, (Date.now() - voiceStartRef.current) / 1000) : 5;
+        const audioUri = lastAudioUriRef.current;
         if (autoInterpretRef.current && transcript && !autoSendLockedRef.current) {
           autoSendLockedRef.current = true;
           setVoiceHint('Interpretando pedido...');
-          sendTextMessage(transcript, { isVoice: true, duration: durationSeconds }).finally(() => {
+          sendTextMessage(transcript, { isVoice: true, duration: durationSeconds, uri: audioUri }).finally(() => {
             autoInterpretRef.current = false;
             autoSendLockedRef.current = false;
             setVoiceHint('');
@@ -436,11 +455,62 @@ export default function ChatScreen({ route, navigation }) {
         autoInterpretRef.current = false;
         setVoiceHint(transcript ? 'Texto listo para enviar.' : 'No se detecto voz.');
       }),
-      speech.addListener('error', () => {
+      speech.addListener('error', (event) => {
+        const isPersistFailure = isTrackingRecordingRef.current && (
+          event?.error === 'audio-capture' ||
+          event?.error === 'no-speech' ||
+          event?.code === 7
+        );
+
+        if (isPersistFailure) {
+          isTrackingRecordingRef.current = false;
+          disableVoicePersistenceRef.current = true;
+          setVoiceHint('Audio local desactivado. Reintentando...');
+
+          setTimeout(async () => {
+            try {
+              voiceStartRef.current = Date.now();
+              autoInterpretRef.current = true;
+              autoSendLockedRef.current = false;
+              setText('');
+
+              const startOptions = {
+                lang: 'es-BO',
+                interimResults: true,
+                continuous: false,
+                maxAlternatives: 1,
+                addsPunctuation: true,
+                androidIntentOptions: {
+                  EXTRA_LANGUAGE_MODEL: 'free_form',
+                },
+              };
+
+              await speech.start(startOptions);
+            } catch (e) {
+              autoInterpretRef.current = false;
+              autoSendLockedRef.current = false;
+              setRecognizing(false);
+              setVoiceHint('');
+              Alert.alert('No pude iniciar la voz', e?.message || 'Intenta otra vez.');
+            }
+          }, 300);
+          return;
+        }
+
         autoInterpretRef.current = false;
         autoSendLockedRef.current = false;
         setRecognizing(false);
         setVoiceHint('No pude reconocer el audio. Intenta otra vez.');
+      }),
+      speech.addListener('audiostart', (event) => {
+        if (event?.uri) {
+          lastAudioUriRef.current = event.uri;
+        }
+      }),
+      speech.addListener('audioend', (event) => {
+        if (event?.uri) {
+          lastAudioUriRef.current = event.uri;
+        }
       }),
     ];
 
@@ -652,7 +722,17 @@ export default function ChatScreen({ route, navigation }) {
       setText('');
       setVoiceHint('Escuchando pedido...');
 
-      await speech.start({
+      lastAudioUriRef.current = null;
+      const supportsRec = typeof speech.supportsRecording === 'function' ? speech.supportsRecording() : false;
+      let usePersistence = supportsRec && !disableVoicePersistenceRef.current;
+      let voiceOutputDirectory = null;
+      if (usePersistence) {
+        voiceOutputDirectory = getVoiceNoteDirectoryUri();
+        usePersistence = Boolean(voiceOutputDirectory);
+      }
+      isTrackingRecordingRef.current = usePersistence;
+
+      const startOptions = {
         lang: 'es-BO',
         interimResults: true,
         continuous: false,
@@ -660,9 +740,47 @@ export default function ChatScreen({ route, navigation }) {
         addsPunctuation: true,
         androidIntentOptions: {
           EXTRA_LANGUAGE_MODEL: 'free_form',
+          EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS: 10000,
+          EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS: 5000,
+          EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS: 10000,
         },
-      });
+      };
+
+      if (usePersistence) {
+        startOptions.recordingOptions = {
+          persist: true,
+          outputDirectory: voiceOutputDirectory,
+        };
+      }
+
+      if (Platform.OS === 'android') {
+        try {
+          const services = await speech.getSpeechRecognitionServices?.();
+          if (Array.isArray(services) && services.includes('com.google.android.googlequicksearchbox')) {
+            startOptions.androidRecognitionServicePackage = 'com.google.android.googlequicksearchbox';
+          }
+        } catch (_) {}
+      }
+
+      await speech.start(startOptions);
     } catch (e) {
+      if (isTrackingRecordingRef.current) {
+        disableVoicePersistenceRef.current = true;
+        isTrackingRecordingRef.current = false;
+        try {
+          await speech.start({
+            lang: 'es-BO',
+            interimResults: true,
+            continuous: false,
+            maxAlternatives: 1,
+            addsPunctuation: true,
+            androidIntentOptions: {
+              EXTRA_LANGUAGE_MODEL: 'free_form',
+            },
+          });
+          return;
+        } catch (_) {}
+      }
       autoInterpretRef.current = false;
       autoSendLockedRef.current = false;
       setRecognizing(false);
@@ -704,7 +822,7 @@ export default function ChatScreen({ route, navigation }) {
 
       <KeyboardAvoidingView
         style={s.keyboard}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? Math.max(insets.top, 0) : 0}
       >
         {isOrderChat && orderStatus === 'borrador' ? (
@@ -762,7 +880,12 @@ export default function ChatScreen({ route, navigation }) {
             return (
               <View style={[s.bubble, isUser ? s.userBubble : s.agentBubble, item.failed && s.failedBubble]}>
                 {parsed.isVoice ? (
-                  <VoiceNoteBubble text={parsed.voiceText} duration={parsed.voiceDuration} isUser={isUser} />
+                  <VoiceNoteBubble
+                    text={parsed.voiceText}
+                    duration={parsed.voiceDuration}
+                    isUser={isUser}
+                    uri={parsed.voiceUri}
+                  />
                 ) : (
                   parsed.text ? <Text style={s.messageText}>{parsed.text}</Text> : null
                 )}

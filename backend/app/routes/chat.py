@@ -792,23 +792,6 @@ async def send_message(body: ChatMessageCreate, user_id: str = Depends(get_curre
 async def get_general_chat(user_id: str = Depends(get_current_user_id)):
     db = get_supabase_admin()
     
-    # Fetch all orders for this user to identify which ones are NOT drafts.
-    # We keep messages linked to draft orders visible in general chat,
-    # but filter out messages associated with confirmed/sent orders.
-    try:
-        orders_res = (
-            db.table("orders")
-            .select("id, status")
-            .eq("user_id", user_id)
-            .execute()
-        )
-        non_draft_order_ids = {
-            o["id"] for o in orders_res.data if o.get("status") != "borrador"
-        } if orders_res.data else set()
-    except Exception as exc:
-        logger.warning("Failed to fetch order statuses for general chat filter: %s", exc)
-        non_draft_order_ids = set()
-
     result = (
         db.table("chat_messages")
         .select("*")
@@ -817,12 +800,7 @@ async def get_general_chat(user_id: str = Depends(get_current_user_id)):
         .execute()
     )
     
-    general_messages = []
-    for m in result.data:
-        oid = m.get("order_id")
-        if oid is None or oid not in non_draft_order_ids:
-            general_messages.append(m)
-            
+    general_messages = result.data or []
     return [ChatMessageOut(**m) for m in _attach_feedback(db, user_id, general_messages[-100:])]
 
 

@@ -32,6 +32,28 @@ AMBIGUOUS_GAP = 6           # If top-2 scores differ by less than this → ambig
 
 # Presentation qualitative → canonical mapping
 _PRESENTATION_MAP: dict[str, str] = {
+    # Volt specific
+    "volt chico": "300ml",
+    "voltcito": "300ml",
+    "volt grande": "500ml",
+    "volt mediano": "500ml",
+    
+    # Coca-Cola specific
+    "coca chica": "500ml",
+    "coca chiquita": "500ml",
+    "coca personal": "500ml",
+    "coquita": "500ml",
+    "coca grande": "2L",
+    "coca familiar": "2L",
+    
+    # Agua Cielo specific
+    "agua chica": "500ml",
+    "agua chiquita": "500ml",
+    "agua personal": "500ml",
+    "agua grande": "2.5L",
+    "agua familiar": "2.5L",
+
+    # General qualitative terms
     "chico": "500ml",
     "chica": "500ml",
     "chika": "500ml",
@@ -40,8 +62,11 @@ _PRESENTATION_MAP: dict[str, str] = {
     "personal": "500ml",
     "pequeño": "500ml",
     "pequeña": "500ml",
-    "litro": "1L",
+    "medio litro": "500ml",
+    "un litro y medio": "1.5L",
+    "litro y medio": "1.5L",
     "un litro": "1L",
+    "litro": "1L",
     "mediano": "1L",
     "grande": "2L",
     "familiar": "2L",
@@ -88,10 +113,10 @@ def _canonical_presentation(raw: str | None) -> str | None:
         return None
     normalized = _normalize(raw)
 
-    # Check qualitative map first
-    for key, canonical in _PRESENTATION_MAP.items():
-        if key in normalized:
-            return canonical
+    # Check qualitative map first on word boundaries
+    for key in sorted(_PRESENTATION_MAP.keys(), key=len, reverse=True):
+        if re.search(rf"\b{re.escape(key)}\b", normalized):
+            return _PRESENTATION_MAP[key]
 
     # Numeric: 500ml / 2L / 1.5L
     m = re.search(r"(\d+(?:[.,]\d+)?)\s*(ml|l|lt|lts|litros?)", normalized)

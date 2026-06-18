@@ -1,0 +1,57 @@
+SHEETS: ['Portada', 'Casos de Prueba', 'Evaluación Heurística', 'Cuestionario SUS', 'Datos 33 Participantes', 'Gráficos Representativos', 'Registro de Resultados', 'Problemas y Hallazgos', 'Criterios de Aceptación', 'Conclusiones', 'Notas y Aclaraciones']
+
+=========================================
+SHEET: Portada (File: xl/worksheets/sheet1.xml)
+=========================================
+
+
+=========================================
+SHEET: Casos de Prueba (File: xl/worksheets/sheet2.xml)
+=========================================
+
+
+=========================================
+SHEET: Evaluación Heurística (File: xl/worksheets/sheet3.xml)
+=========================================
+
+
+=========================================
+SHEET: Cuestionario SUS (File: xl/worksheets/sheet4.xml)
+=========================================
+
+
+=========================================
+SHEET: Datos 33 Participantes (File: xl/worksheets/sheet5.xml)
+=========================================
+
+
+=========================================
+SHEET: Gráficos Representativos (File: xl/worksheets/sheet6.xml)
+=========================================
+
+
+=========================================
+SHEET: Registro de Resultados (File: xl/worksheets/sheet7.xml)
+=========================================
+
+
+=========================================
+SHEET: Problemas y Hallazgos (File: xl/worksheets/sheet8.xml)
+=========================================
+
+
+=========================================
+SHEET: Criterios de Aceptación (File: xl/worksheets/sheet9.xml)
+=========================================
+
+
+=========================================
+SHEET: Conclusiones (File: xl/worksheets/sheet10.xml)
+=========================================
+
+
+=========================================
+SHEET: Notas y Aclaraciones (File: xl/worksheets/sheet11.xml)
+=========================================
+
+

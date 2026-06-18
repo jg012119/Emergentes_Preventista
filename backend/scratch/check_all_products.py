@@ -7,18 +7,16 @@ from app.config import get_supabase_admin
 
 db = get_supabase_admin()
 
-print("--- ALL PRODUCTS IN DATABASE ---")
+print("--- VOLT & COCA PRODUCTS & ALIASES IN SUPABASE ---")
 try:
-    res = db.table("products").select("id, name, active").execute()
-    for row in res.data:
-        print(f"ID: {row['id']} | Name: {row['name']} | Active: {row['active']}")
+    res_p = db.table("products").select("id, name").execute()
+    p_map = {row['id']: row['name'] for row in res_p.data}
+    
+    res_a = db.table("product_aliases").select("*").execute()
+    for row in res_a.data:
+        p_name = p_map.get(row['product_id'], "Unknown")
+        if "volt" in p_name.lower() or "coca" in p_name.lower() or "volt" in row['alias_text'].lower() or "coca" in row['alias_text'].lower():
+            print(f"Product: {p_name} | Alias: {row['alias_text']} | Confidence: {row['confidence_weight']}")
 except Exception as e:
-    print("Error querying products:", e)
+    print("Error querying database:", e)
 
-print("\n--- ALL ALIASES IN DATABASE ---")
-try:
-    res = db.table("product_aliases").select("*").execute()
-    for row in res.data:
-        print(row)
-except Exception as e:
-    print("Error querying aliases:", e)
