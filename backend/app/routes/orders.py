@@ -64,6 +64,62 @@ def _enrich_order(order: dict, db) -> OrderOut:
     )
 
 
+def _enrich_orders(orders: list[dict], db) -> list[OrderOut]:
+    """Add items and store names to many orders with bulk lookups."""
+    if not orders:
+        return []
+
+    order_ids = {order["id"] for order in orders}
+    store_ids = {order.get("store_id") for order in orders if order.get("store_id")}
+
+    all_items = db.table("order_items").select("*").execute().data
+    items_for_orders = [item for item in all_items if item.get("order_id") in order_ids]
+    product_ids = {item.get("product_id") for item in items_for_orders if item.get("product_id")}
+
+    products = db.table("products").select("id, name").execute().data
+    product_name_by_id = {
+        product["id"]: product.get("name", "Desconocido")
+        for product in products
+        if product.get("id") in product_ids
+    }
+
+    stores = db.table("stores").select("id, name").execute().data
+    store_name_by_id = {
+        store["id"]: store.get("name", "Desconocida")
+        for store in stores
+        if store.get("id") in store_ids
+    }
+
+    items_by_order: dict[str, list[OrderItemOut]] = {}
+    for item in items_for_orders:
+        items_by_order.setdefault(item["order_id"], []).append(OrderItemOut(
+            id=item["id"],
+            order_id=item["order_id"],
+            product_id=item["product_id"],
+            product_name=product_name_by_id.get(item["product_id"], "Desconocido"),
+            quantity=item["quantity"],
+            unit_price=item["unit_price"],
+            subtotal=item["subtotal"],
+        ))
+
+    return [
+        OrderOut(
+            id=order["id"],
+            user_id=order["user_id"],
+            store_id=order["store_id"],
+            store_name=store_name_by_id.get(order.get("store_id"), "Desconocida"),
+            status=order["status"],
+            delivery_date=str(order.get("delivery_date", "")) if order.get("delivery_date") else None,
+            total=order["total"],
+            notes=order.get("notes"),
+            created_at=order.get("created_at"),
+            items=items_by_order.get(order["id"], []),
+            nlp_data=order.get("nlp_data"),
+        )
+        for order in orders
+    ]
+
+
 def _money(value) -> str:
     try:
         return f"Bs {float(value or 0):.2f}"
@@ -305,7 +361,7 @@ async def confirm_order(order_id: str, user_id: str = Depends(get_current_user_i
 
 
 @router.get("/", response_model=list[OrderOut])
-async def list_orders(
+def list_orders(
     status_filter: str | None = None,
     user_id: str = Depends(get_current_user_id),
 ):
@@ -319,11 +375,11 @@ async def list_orders(
         query = query.eq("status", status_filter)
 
     result = query.execute()
-    return [_enrich_order(o, db) for o in result.data]
+    return _enrich_orders(result.data, db)
 
 
 @router.get("/all", response_model=list[OrderOut])
-async def list_all_orders(
+def list_all_orders(
     status_filter: str | None = None,
     _user_id: str = Depends(get_current_user_id),
 ):
@@ -333,7 +389,7 @@ async def list_all_orders(
     if status_filter:
         query = query.eq("status", status_filter)
     result = query.execute()
-    return [_enrich_order(o, db) for o in result.data]
+    return _enrich_orders(result.data, db)
 
 
 @router.get("/{order_id}", response_model=OrderOut)

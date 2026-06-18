@@ -49,8 +49,8 @@ document.addEventListener('DOMContentLoaded', () => {
     nextBtn.style.opacity = currentSlideIndex === slides.length - 1 ? '0.3' : '1';
     nextBtn.style.pointerEvents = currentSlideIndex === slides.length - 1 ? 'none' : 'auto';
 
-    // Trigger Usability Chart Animation (Slide Index 6)
-    if (currentSlideIndex === 6) {
+    // Trigger Usability Chart Animation (Slide Index 7)
+    if (currentSlideIndex === 7) {
       setTimeout(() => {
         if (barBo) barBo.style.width = '79.4%';
         if (barUs) barUs.style.width = '36.6%';
